@@ -1,0 +1,30 @@
+{
+  // F5 (실행 및 디버그) 에서 선택
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Backend: FastAPI",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["app.main:app", "--reload", "--port", "8000"],
+      "cwd": "${workspaceFolder}/backend",
+      "envFile": "${workspaceFolder}/backend/.env",
+      "jinja": true
+    },
+    {
+      "name": "Frontend: Vite (Chrome)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/frontend",
+      "preLaunchTask": "frontend: dev"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Stack (백엔드 + 프론트)",
+      "configurations": ["Backend: FastAPI", "Frontend: Vite (Chrome)"]
+    }
+  ]
+}

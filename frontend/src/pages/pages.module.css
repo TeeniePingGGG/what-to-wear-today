@@ -1,0 +1,490 @@
+/* 페이지 공통 */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.title {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--color-text-sub);
+  margin-top: 2px;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.backRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: -10px;
+}
+
+.iconLink {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text);
+  border-radius: var(--radius-md);
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.sampleBadge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-warm-ink);
+  background: var(--color-warm-soft);
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+
+/* 오늘 화면: 데스크톱에서 2단 */
+.todayGrid {
+  display: grid;
+  gap: 14px;
+}
+
+.todayCol {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+@media (min-width: 1024px) {
+  .todayGrid {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    align-items: start;
+  }
+}
+
+.weatherMain {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.temp {
+  font-size: 46px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.stat {
+  background: var(--color-surface-muted);
+  border-radius: 12px;
+  padding: 8px 10px;
+}
+
+.statLabel {
+  font-size: 11px;
+  color: var(--color-text-sub);
+}
+
+.statValue {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.statRain {
+  background: var(--color-rain-soft);
+}
+
+.statRain .statLabel,
+.statRain .statValue {
+  color: var(--color-rain-ink);
+}
+
+.rowLink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border-radius: 16px;
+  padding: 12px 16px;
+}
+
+.iconBadge {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.outfitItems {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 14px 0;
+}
+
+.outfitThumb {
+  aspect-ratio: 1 / 1;
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.itemName {
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  margin-top: 6px;
+}
+
+.itemSub {
+  font-size: 11px;
+  color: var(--color-text-sub);
+  text-align: center;
+}
+
+.reasonBox {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-ink);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  font-size: 14px;
+  line-height: 1.55;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.actions > * {
+  flex: 1;
+}
+
+/* 옷장 */
+.tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.closetGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (min-width: 640px) {
+  .closetGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .closetGrid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 14px;
+  }
+}
+
+.closetCard {
+  background: var(--color-surface);
+  border-radius: 16px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.closetImg {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-sm);
+}
+
+.ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.empty {
+  text-align: center;
+  padding: 48px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: var(--color-text-sub);
+}
+
+/* 폼 */
+.formGrid {
+  display: grid;
+  gap: 14px;
+}
+
+@media (min-width: 768px) {
+  .formGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .span2 {
+    grid-column: span 2;
+  }
+}
+
+.addLayout {
+  display: grid;
+  gap: 16px;
+}
+
+@media (min-width: 1024px) {
+  .addLayout {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    align-items: start;
+  }
+}
+
+.dropzone {
+  min-height: 240px;
+  border: 2px dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--color-text-sub);
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+}
+
+.preview {
+  width: 100%;
+  height: 100%;
+  max-height: 360px;
+  object-fit: contain;
+}
+
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  font-size: 11px;
+  color: var(--color-text-sub);
+}
+
+.steps li {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.stepBar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-border-strong);
+}
+
+.stepDone {
+  background: var(--color-primary);
+}
+
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.checkRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+/* 인증 화면 */
+.authWrap {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px var(--space-page);
+}
+
+.authCard {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 가이드 */
+.reasonRow {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.reasonTag {
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 4px 8px;
+  min-width: 40px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.tips {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.bubble {
+  background: var(--color-surface);
+  border-radius: 4px 18px 18px 18px;
+  padding: 12px 14px;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.narrow {
+  max-width: 720px;
+  width: 100%;
+}
+
+/* AI 옷 등록 */
+.stepActive {
+  background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-soft) 50%, var(--color-primary) 100%);
+  background-size: 200% 100%;
+  animation: stepPulse 1.2s linear infinite;
+}
+
+@keyframes stepPulse {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stepActive {
+    animation: none;
+    background: var(--color-primary-soft);
+  }
+}
+
+.checker {
+  background-color: #fff;
+  background-image: repeating-conic-gradient(#eef0ec 0% 25%, #fff 0% 50%);
+  background-size: 20px 20px;
+  border-style: solid;
+  border-color: var(--color-border);
+}
+
+.analyzing {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 8px 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.checkBadge {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-warm-ink);
+  background: var(--color-warm-soft);
+  border-radius: 6px;
+  padding: 1px 6px;
+  vertical-align: 1px;
+}
+
+.notice {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-warm-ink);
+  background: var(--color-warm-soft);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+}
+
+.aiNotice {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--color-primary-ink);
+  background: var(--color-primary-soft);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+}
+
+fieldset:disabled input,
+fieldset:disabled select,
+fieldset:disabled .chip {
+  opacity: 0.55;
+}

@@ -1,0 +1,32 @@
+{
+  // Ctrl+Shift+P → "Tasks: Run Task"
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "db: up (docker)",
+      "type": "shell",
+      "command": "docker compose up -d",
+      "problemMatcher": []
+    },
+    {
+      "label": "db: migrate",
+      "type": "shell",
+      "command": "${workspaceFolder}/backend/.venv/bin/alembic upgrade head",
+      "windows": { "command": "${workspaceFolder}\\backend\\.venv\\Scripts\\alembic.exe upgrade head" },
+      "options": { "cwd": "${workspaceFolder}/backend" },
+      "problemMatcher": []
+    },
+    {
+      "label": "frontend: dev",
+      "type": "npm",
+      "script": "dev",
+      "path": "frontend",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "vite",
+        "pattern": { "regexp": "^$" },
+        "background": { "activesBegin": ".", "beginsPattern": "VITE", "endsPattern": "Local:" }
+      }
+    }
+  ]
+}

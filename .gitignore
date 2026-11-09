@@ -1,0 +1,32 @@
+# 환경변수 (API 키 등) — 절대 커밋 금지
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# 업로드된 옷 사진
+backend/uploads/
+
+# Node
+node_modules/
+dist/
+*.local
+npm-debug.log*
+
+# 에디터 / OS
+.idea/
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/tasks.json

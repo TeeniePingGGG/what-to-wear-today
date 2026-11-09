@@ -1,0 +1,24 @@
+{
+  "editor.formatOnSave": true,
+  "files.eol": "\n",
+
+  // Python (backend)
+  "python.analysis.extraPaths": ["${workspaceFolder}/backend"],
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.tabSize": 4
+  },
+
+  // React (frontend)
+  "[typescript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[typescriptreact]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[css]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "prettier.singleQuote": true,
+  "prettier.semi": false,
+  "prettier.printWidth": 120,
+
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.venv": true
+  }
+}

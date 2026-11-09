@@ -1,0 +1,174 @@
+/* 디자인 토큰 — UI 시안(캔버스)과 같은 값 */
+:root {
+  --color-bg: #f3f4f1;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f3f4f1;
+  --color-border: #e3e5e1;
+  --color-border-strong: #d3d6d1;
+  --color-text: #15171a;
+  --color-text-sub: #5b6168;
+  --color-primary: #0b6b5d;
+  --color-primary-hover: #084f45;
+  --color-primary-soft: #e2f0ec;
+  --color-primary-ink: #12302a;
+  --color-rain: #2f5fa8;
+  --color-rain-soft: #e8eef8;
+  --color-rain-ink: #1f3f73;
+  --color-warm: #c2571f;
+  --color-warm-soft: #fbeadf;
+  --color-warm-ink: #8a3a12;
+  --color-danger: #b42318;
+
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+
+  --space-page: 20px;
+  --nav-height: 68px;
+  --sidebar-width: 220px;
+
+  --font-sans: 'IBM Plex Sans KR', system-ui, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  word-break: keep-all;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: var(--color-primary);
+}
+
+input[type='range'],
+input[type='checkbox'] {
+  accent-color: var(--color-primary);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* 공통 컴포넌트 */
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+}
+
+.btn {
+  height: 48px;
+  padding: 0 18px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  font-size: 15px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--color-text);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.chip {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.chip[aria-pressed='true'],
+.chip[aria-selected='true'] {
+  background: var(--color-text);
+  border-color: var(--color-text);
+  color: #fff;
+  font-weight: 600;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.field input,
+.field select,
+.field textarea {
+  height: 46px;
+  padding: 0 14px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.field textarea {
+  height: auto;
+  padding: 12px 14px;
+  resize: vertical;
+}
+
+.error-text {
+  color: var(--color-danger);
+  font-size: 13px;
+}
