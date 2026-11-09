@@ -9,7 +9,7 @@
 | Frontend | React 19 · TypeScript · Vite · React Router · TanStack Query · axios · CSS Modules |
 | Backend | Python 3.12+ · FastAPI · SQLAlchemy 2 · Alembic · JWT 인증 |
 | Database | MySQL 8.0 |
-| AI | Gemini (옷 사진 분석, 이후 코디 추천·가이드) · rembg (배경 제거) |
+| AI · 외부 API | Gemini (옷 사진 분석, 코디 추천) · rembg (배경 제거) · Open-Meteo (날씨, 키 없음) |
 
 ## 폴더 구조
 
@@ -110,9 +110,9 @@ http://localhost:5173 접속 → 회원가입 → 옷 등록. `/api` 요청은 V
 | 회원가입 / 로그인 / 내 정보 (`/api/auth/*`) | ✅ |
 | 옷 등록 · 목록 · 수정 · 삭제 (`/api/clothes`) | ✅ |
 | 반응형 레이아웃 (모바일 하단 탭 / 데스크톱 사이드바) | ✅ |
-| 홈 · 일정 입력 · 스타일리스트 가이드 화면 | 🟡 UI만 (샘플 데이터) |
+| 홈 · 일정 입력 화면 | ✅ 실제 데이터 · 스타일리스트 가이드 화면은 🟡 샘플 |
 | 기능 1: 배경 제거 + Vision AI 자동 태깅 → 사용자 검수, 여러 벌 한 번에 등록 (`/api/clothes/analyze`, `/api/clothes/bulk`) | ✅ |
-| 기능 2: 날씨 API + LLM 코디 추천 | ⬜ 3주차 |
+| 기능 2: 날씨 API + 일정 + LLM 코디 추천 (`/api/weather`, `/api/schedules`, `/api/recommendations`) | ✅ |
 | 기능 3: AI 가이드 생성 + 피드백 반영 | ⬜ 4주차 |
 
 코드에서 `TODO(기능1)`, `TODO(기능2)`, `TODO(기능3)` 으로 검색하면 연결할 위치가 나와요.

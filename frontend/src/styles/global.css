@@ -107,6 +107,7 @@ input[type='checkbox'] {
   cursor: pointer;
   text-decoration: none;
   color: var(--color-text);
+  white-space: nowrap;
 }
 
 .btn:disabled {
@@ -135,7 +136,8 @@ input[type='checkbox'] {
 }
 
 .chip[aria-pressed='true'],
-.chip[aria-selected='true'] {
+.chip[aria-selected='true'],
+.chip[aria-checked='true'] {
   background: var(--color-text);
   border-color: var(--color-text);
   color: #fff;

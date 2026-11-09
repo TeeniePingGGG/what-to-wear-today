@@ -8,3 +8,5 @@ PyJWT==2.15.1
 bcrypt==5.0.0
 google-genai==3.0.0
 Pillow==13.0.0
+tzdata==2026.6  # timezone data for Asia/Seoul on Windows
+httpx==0.28.1

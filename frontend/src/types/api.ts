@@ -107,3 +107,105 @@ export interface TokenResponse {
   access_token: string
   token_type: 'bearer'
 }
+
+// --- 기능 2: 날씨·일정·코디 추천 ---
+
+export type Mood = 'COMFY' | 'NEAT' | 'DRESSY'
+
+export const MOOD_LABEL: Record<Mood, string> = {
+  COMFY: '편하게',
+  NEAT: '단정하게',
+  DRESSY: '꾸민 듯',
+}
+
+export interface HourlyWeather {
+  hour: number
+  temp: number
+  feels_like: number
+  pop: number
+  sky: string
+}
+
+export interface Weather {
+  location_name: string | null
+  latitude: number
+  longitude: number
+  temp: number
+  feels_like: number
+  sky: string
+  /** 예: "맑음, 15시부터 비 소식" */
+  summary: string
+  temp_max: number
+  temp_min: number
+  temp_range: number
+  /** 오늘 하루 최고 강수확률 (지난 시간 포함) */
+  pop_max: number
+  /** 지금부터 남은 시간의 최고 강수확률 */
+  pop_rest: number
+  rain_from: number | null
+  rain_until: number | null
+  hourly: HourlyWeather[]
+  fetched_at: string
+}
+
+export interface Schedule {
+  id: number
+  date: string
+  title: string
+  /** "14:00:00" */
+  start_time: string | null
+  end_time: string | null
+  location: string | null
+  is_outdoor: boolean | null
+  is_important: boolean
+  source: 'MANUAL' | 'GOOGLE'
+}
+
+export interface ScheduleCreate {
+  title: string
+  start_time?: string | null
+  is_important?: boolean
+  is_outdoor?: boolean | null
+}
+
+export interface OutfitClothing {
+  id: number
+  name: string
+  category: Category
+  sub_category: string | null
+  color_name: string | null
+  color_hex: string | null
+  image_url: string
+}
+
+export interface Outfit {
+  id: number
+  rank: number
+  summary: string | null
+  reasons: unknown[] | null
+  tips: string[] | null
+  is_selected: boolean
+  items: { slot: Category; clothing_item: OutfitClothing }[]
+}
+
+export interface Recommendation {
+  id: number
+  target_date: string
+  location_name: string | null
+  weather: Weather
+  situations: string[]
+  mood: Mood | null
+  user_note: string | null
+  status: 'PENDING' | 'COMPLETED' | 'FAILED'
+  created_at: string
+  outfits: Outfit[]
+}
+
+export interface RecommendRequest {
+  latitude: number
+  longitude: number
+  location_name: string | null
+  situations: string[]
+  mood: Mood | null
+  user_note: string | null
+}

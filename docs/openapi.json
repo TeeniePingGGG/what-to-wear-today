@@ -564,6 +564,358 @@
         }
       }
     },
+    "/api/weather": {
+      "get": {
+        "tags": [
+          "weather"
+        ],
+        "summary": "Get Weather",
+        "description": "위치의 오늘 날씨 (한국 시간 기준).",
+        "operationId": "get_weather_api_weather_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "lat",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "maximum": 90,
+              "minimum": -90,
+              "title": "Lat"
+            }
+          },
+          {
+            "name": "lon",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "maximum": 180,
+              "minimum": -180,
+              "title": "Lon"
+            }
+          },
+          {
+            "name": "location_name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Location Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeatherOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/schedules": {
+      "get": {
+        "tags": [
+          "schedules"
+        ],
+        "summary": "List Schedules",
+        "description": "하루 일정 목록. date 를 비우면 오늘.",
+        "operationId": "list_schedules_api_schedules_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScheduleOut"
+                  },
+                  "title": "Response List Schedules Api Schedules Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "schedules"
+        ],
+        "summary": "Create Schedule",
+        "operationId": "create_schedule_api_schedules_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/schedules/{schedule_id}": {
+      "delete": {
+        "tags": [
+          "schedules"
+        ],
+        "summary": "Delete Schedule",
+        "operationId": "delete_schedule_api_schedules__schedule_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "schedule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Schedule Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recommendations": {
+      "post": {
+        "tags": [
+          "recommendations"
+        ],
+        "summary": "Create Recommendation",
+        "description": "오늘 날씨 + 일정 + 상황으로 내 옷장에서 코디 최대 3개를 추천받는다.",
+        "operationId": "create_recommendation_api_recommendations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecommendRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/recommendations/today": {
+      "get": {
+        "tags": [
+          "recommendations"
+        ],
+        "summary": "Today Recommendation",
+        "description": "오늘 받은 가장 최근 추천. 없으면 null.",
+        "operationId": "today_recommendation_api_recommendations_today_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/RecommendationOut"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Today Recommendation Api Recommendations Today Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/outfits/{outfit_id}/select": {
+      "post": {
+        "tags": [
+          "recommendations"
+        ],
+        "summary": "Select Outfit",
+        "description": "'이걸로 입을게요' — 오늘 입을 코디로 정하고 옷마다 착용 기록을 남긴다. 같은 추천의 다른 코디는 선택 해제.",
+        "operationId": "select_outfit_api_outfits__outfit_id__select_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "outfit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Outfit Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/health": {
       "get": {
         "tags": [
@@ -1281,6 +1633,41 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "HourlyWeather": {
+        "properties": {
+          "hour": {
+            "type": "integer",
+            "title": "Hour",
+            "description": "0~23시"
+          },
+          "temp": {
+            "type": "integer",
+            "title": "Temp"
+          },
+          "feels_like": {
+            "type": "integer",
+            "title": "Feels Like"
+          },
+          "pop": {
+            "type": "integer",
+            "title": "Pop",
+            "description": "강수확률 %"
+          },
+          "sky": {
+            "type": "string",
+            "title": "Sky"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hour",
+          "temp",
+          "feels_like",
+          "pop",
+          "sky"
+        ],
+        "title": "HourlyWeather"
+      },
       "LoginRequest": {
         "properties": {
           "email": {
@@ -1299,6 +1686,15 @@
           "password"
         ],
         "title": "LoginRequest"
+      },
+      "Mood": {
+        "type": "string",
+        "enum": [
+          "COMFY",
+          "NEAT",
+          "DRESSY"
+        ],
+        "title": "Mood"
       },
       "MultiAnalyzeResponse": {
         "properties": {
@@ -1334,6 +1730,156 @@
           "ai_error"
         ],
         "title": "MultiAnalyzeResponse"
+      },
+      "OutfitClothingOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "category": {
+            "$ref": "#/components/schemas/Category"
+          },
+          "sub_category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sub Category"
+          },
+          "color_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color Name"
+          },
+          "color_hex": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color Hex"
+          },
+          "image_url": {
+            "type": "string",
+            "title": "Image Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "category",
+          "sub_category",
+          "color_name",
+          "color_hex",
+          "image_url"
+        ],
+        "title": "OutfitClothingOut"
+      },
+      "OutfitItemOut": {
+        "properties": {
+          "slot": {
+            "$ref": "#/components/schemas/Category"
+          },
+          "clothing_item": {
+            "$ref": "#/components/schemas/OutfitClothingOut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "slot",
+          "clothing_item"
+        ],
+        "title": "OutfitItemOut"
+      },
+      "OutfitOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "rank": {
+            "type": "integer",
+            "title": "Rank"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "reasons": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasons",
+            "description": "상세 추천 이유 (기능 3에서 채움)"
+          },
+          "tips": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tips",
+            "description": "스타일링 팁 (기능 3에서 채움)"
+          },
+          "is_selected": {
+            "type": "boolean",
+            "title": "Is Selected"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OutfitItemOut"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "rank",
+          "summary",
+          "reasons",
+          "tips",
+          "is_selected",
+          "items"
+        ],
+        "title": "OutfitOut"
       },
       "ReanalyzeRequest": {
         "properties": {
@@ -1394,6 +1940,181 @@
         ],
         "title": "ReanalyzeResponse"
       },
+      "RecommendRequest": {
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Longitude"
+          },
+          "location_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location Name"
+          },
+          "situations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "title": "Situations",
+            "description": "오늘의 상황 (예: [\"발표\", \"저녁 약속\"])",
+            "default": []
+          },
+          "mood": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Mood"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "user_note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Note",
+            "description": "AI에게 더 알려줄 것"
+          }
+        },
+        "type": "object",
+        "required": [
+          "latitude",
+          "longitude"
+        ],
+        "title": "RecommendRequest"
+      },
+      "RecommendationOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "target_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Target Date"
+          },
+          "location_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location Name"
+          },
+          "weather": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Weather"
+          },
+          "schedule_snapshot": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schedule Snapshot"
+          },
+          "situations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Situations"
+          },
+          "mood": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Mood"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "user_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Note"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RecommendationStatus"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "outfits": {
+            "items": {
+              "$ref": "#/components/schemas/OutfitOut"
+            },
+            "type": "array",
+            "title": "Outfits"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "target_date",
+          "location_name",
+          "weather",
+          "schedule_snapshot",
+          "situations",
+          "mood",
+          "user_note",
+          "status",
+          "created_at",
+          "outfits"
+        ],
+        "title": "RecommendationOut"
+      },
+      "RecommendationStatus": {
+        "type": "string",
+        "enum": [
+          "PENDING",
+          "COMPLETED",
+          "FAILED"
+        ],
+        "title": "RecommendationStatus"
+      },
       "RedetectRequest": {
         "properties": {
           "original_image_url": {
@@ -1407,6 +2128,179 @@
           "original_image_url"
         ],
         "title": "RedetectRequest"
+      },
+      "ScheduleCreate": {
+        "properties": {
+          "date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date",
+            "description": "비우면 오늘(한국 시간)"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "start_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Time"
+          },
+          "end_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Time"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "is_outdoor": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Outdoor",
+            "description": "실외 일정이면 true, 모르면 null"
+          },
+          "is_important": {
+            "type": "boolean",
+            "title": "Is Important",
+            "description": "코디 기준이 되는 주요 일정",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "title"
+        ],
+        "title": "ScheduleCreate"
+      },
+      "ScheduleOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Date"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "start_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Time"
+          },
+          "end_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Time"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "is_outdoor": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Outdoor"
+          },
+          "is_important": {
+            "type": "boolean",
+            "title": "Is Important"
+          },
+          "source": {
+            "$ref": "#/components/schemas/ScheduleSource"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "date",
+          "title",
+          "start_time",
+          "end_time",
+          "location",
+          "is_outdoor",
+          "is_important",
+          "source"
+        ],
+        "title": "ScheduleOut"
+      },
+      "ScheduleSource": {
+        "type": "string",
+        "enum": [
+          "MANUAL",
+          "GOOGLE"
+        ],
+        "title": "ScheduleSource"
       },
       "Season": {
         "type": "string",
@@ -1544,6 +2438,122 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "WeatherOut": {
+        "properties": {
+          "location_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location Name"
+          },
+          "latitude": {
+            "type": "number",
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "title": "Longitude"
+          },
+          "temp": {
+            "type": "integer",
+            "title": "Temp",
+            "description": "현재 기온 °C"
+          },
+          "feels_like": {
+            "type": "integer",
+            "title": "Feels Like",
+            "description": "현재 체감 온도 °C"
+          },
+          "sky": {
+            "type": "string",
+            "title": "Sky",
+            "description": "현재 하늘 상태 (예: 맑음)"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary",
+            "description": "한 줄 요약 (예: 맑음, 15시부터 비 소식)"
+          },
+          "temp_max": {
+            "type": "integer",
+            "title": "Temp Max"
+          },
+          "temp_min": {
+            "type": "integer",
+            "title": "Temp Min"
+          },
+          "temp_range": {
+            "type": "integer",
+            "title": "Temp Range",
+            "description": "일교차"
+          },
+          "pop_max": {
+            "type": "integer",
+            "title": "Pop Max",
+            "description": "오늘 최고 강수확률 %"
+          },
+          "rain_from": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rain From",
+            "description": "지금 이후 비가 시작될 시각(시). 없으면 null"
+          },
+          "rain_until": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rain Until"
+          },
+          "hourly": {
+            "items": {
+              "$ref": "#/components/schemas/HourlyWeather"
+            },
+            "type": "array",
+            "title": "Hourly",
+            "description": "6~23시 시간별 예보"
+          },
+          "fetched_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fetched At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "location_name",
+          "latitude",
+          "longitude",
+          "temp",
+          "feels_like",
+          "sky",
+          "summary",
+          "temp_max",
+          "temp_min",
+          "temp_range",
+          "pop_max",
+          "rain_from",
+          "rain_until",
+          "hourly",
+          "fetched_at"
+        ],
+        "title": "WeatherOut"
       }
     },
     "securitySchemes": {

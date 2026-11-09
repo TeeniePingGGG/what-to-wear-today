@@ -1,17 +1,4 @@
-// 날씨·추천 API가 붙기 전까지 화면 확인용 샘플 데이터 (기능 2·3 개발 시 삭제)
-
-export const sampleWeather = {
-  location: '서울 마포구',
-  temp: 14,
-  sky: '맑음, 오후부터 비',
-  max: 18,
-  min: 9,
-  feelsLike: 12,
-  pop: 60,
-  rainFrom: '15시~',
-}
-
-export const sampleSchedule = { time: '14:00', title: '팀 프로젝트 발표', hint: '단정하게' }
+// 스타일리스트 가이드 화면용 샘플 데이터 (기능 3 개발 시 삭제)
 
 export const sampleOutfit = {
   id: 1,
@@ -34,10 +21,3 @@ export const sampleOutfit = {
     '슬랙스와 비슷한 차콜 양말로 다리 라인을 길게 이어 보세요.',
   ],
 }
-
-export const CLOTH_SHAPES = {
-  top: 'M23 9 L13 13 L6 23 L13 29 L18 25 L18 56 L46 56 L46 25 L51 29 L58 23 L51 13 L41 9 Q32 15 23 9 Z',
-  pants: 'M19 7 H45 L49 57 H37 L32 25 L27 57 H15 Z',
-  coat: 'M24 6 L13 11 L8 30 L12 58 H52 L56 30 L51 11 L40 6 L32 22 Z',
-  shoe: 'M7 42 Q8 31 19 31 L28 35 Q41 39 54 40 Q58 42 58 48 L58 50 H7 Z',
-} as const
