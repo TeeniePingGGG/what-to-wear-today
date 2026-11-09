@@ -12,9 +12,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core import clock
-from app.models import ClothingItem, Outfit, OutfitItem, Recommendation, Schedule, User
-from app.models.enums import Category, ClothingStatus, Mood, RecommendationStatus
-from app.schemas.recommendation import OutfitPick, OutfitPicks, RecommendRequest
+from app.models import ClothingItem, Outfit, OutfitFeedback, OutfitItem, Recommendation, Schedule, User
+from app.models.enums import Category, ClothingStatus, FeedbackRating, Mood, RecommendationStatus
+from app.schemas.recommendation import FEEDBACK_REASONS, OutfitPick, OutfitPicks, RecommendRequest
 from app.schemas.weather import WeatherOut
 from app.services.gemini import AIError, generate
 
@@ -41,6 +41,9 @@ PROMPT = """너는 친절한 패션 스타일리스트야. 사용자가 **이미
 - 분위기: {mood}
 - 사용자 메모: {note}
 
+## 사용자가 최근 남긴 코디 피드백 (참고해서 취향과 체감에 맞춰)
+{feedback}
+
 ## 사용자의 옷장 (JSON, id 로 고르기)
 {closet}
 
@@ -53,9 +56,39 @@ PROMPT = """너는 친절한 패션 스타일리스트야. 사용자가 **이미
 4. 보온성(warmth_level 1~5)과 계절(seasons)이 오늘 기온에 맞아야 해.
 5. 일정·상황·분위기에 어울려야 해 (예: 발표·면접은 단정하게, 운동·많이 걷기는 편하게).
 6. worn_recently 가 true 인 옷은 다른 선택지가 없을 때만 써.
+   피드백에서 '추울 것 같아요'가 있었으면 비슷한 기온에서 더 따뜻하게, '더울 것 같아요'면 더 가볍게 골라.
+   '아쉬워요'를 받은 조합은 그대로 반복하지 말고, '좋아요'를 받은 옷·조합 스타일은 참고해.
 7. 서로 다른 코디를 최대 {max_outfits}개, 가장 좋은 것부터 순서대로. 코디끼리 옷이 2개 이상은 달라야 해.
 8. summary: 왜 이 조합인지 날씨·일정을 근거로 한국어 1~2문장, 80자 이내. 옷 이름을 자연스럽게 넣어.
 """
+
+
+def feedback_text(db: Session, user_id: int, days: int = 30, limit: int = 8) -> str:
+    """최근 피드백 요약 (추천 프롬프트용). 없으면 '없음'."""
+    since = clock.today() - timedelta(days=days)
+    q = (
+        select(OutfitFeedback)
+        .join(Outfit, Outfit.id == OutfitFeedback.outfit_id)
+        .join(Recommendation, Recommendation.id == Outfit.recommendation_id)
+        .where(OutfitFeedback.user_id == user_id, Recommendation.target_date >= since)
+        .order_by(OutfitFeedback.updated_at.desc())
+        .limit(limit)
+    )
+    lines = []
+    for fb in db.scalars(q).all():
+        outfit = fb.outfit
+        rec = outfit.recommendation
+        names = " + ".join(oi.clothing_item.name for oi in outfit.items)
+        w = rec.weather or {}
+        cond = f"{rec.target_date.month}/{rec.target_date.day}, 체감 {w.get('feels_like', '?')}°C"
+        if fb.rating == FeedbackRating.LIKE:
+            verdict = "좋아요"
+        else:
+            reasons = [FEEDBACK_REASONS.get(r, r) for r in (fb.reasons or [])]
+            verdict = "아쉬워요" + (f" ({', '.join(reasons)})" if reasons else "")
+        comment = f' — "{fb.comment}"' if fb.comment else ""
+        lines.append(f"- {cond}: {names} → {verdict}{comment}")
+    return "\n".join(lines) if lines else "- 아직 없음"
 
 
 class RecommendError(Exception):
@@ -79,7 +112,7 @@ def _check_enough(items: list[ClothingItem]) -> None:
     raise RecommendError(f"코디를 만들려면 {'와 '.join(missing)}를 1벌 이상 등록해 주세요.")
 
 
-def _weather_text(w: WeatherOut) -> str:
+def weather_text(w: WeatherOut) -> str:
     def part(hours: range) -> str:
         hs = [h for h in w.hourly if h.hour in hours]
         if not hs:
@@ -115,7 +148,7 @@ def _schedule_snapshot(rows: list[Schedule]) -> list[dict]:
     ]
 
 
-def _schedule_text(snapshot: list[dict]) -> str:
+def schedule_text(snapshot: list[dict]) -> str:
     if not snapshot:
         return "- 등록된 일정 없음"
     lines = []
@@ -188,11 +221,12 @@ def recommend(db: Session, user: User, req: RecommendRequest, weather: WeatherOu
 
     prompt = PROMPT.format(
         location=weather.location_name or req.location_name or "현재 위치",
-        weather=_weather_text(weather),
-        schedules=_schedule_text(snapshot),
+        weather=weather_text(weather),
+        schedules=schedule_text(snapshot),
         situations=", ".join(req.situations) or "특별한 상황 없음",
         mood=MOOD_KO.get(req.mood, "상관없음") if req.mood else "상관없음",
         note=req.user_note or "없음",
+        feedback=feedback_text(db, user.id),
         closet=_closet_json(closet),
         max_outfits=MAX_OUTFITS,
     )

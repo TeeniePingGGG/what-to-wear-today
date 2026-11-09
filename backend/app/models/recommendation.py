@@ -74,6 +74,7 @@ class Outfit(Base):
     )
     rank: Mapped[int] = mapped_column(SmallInteger, nullable=False, comment="1부터 시작하는 추천 순위")
     summary: Mapped[str | None] = mapped_column(String(300), comment="한 줄 추천 이유 (홈 카드)")
+    intro: Mapped[str | None] = mapped_column(String(300), comment="스타일리스트 인사말 (가이드 화면)")
     # [{"tag":"기온","title":"일교차 9° — 레이어드","body":"..."}]
     reasons: Mapped[list | None] = mapped_column(JSON)
     tips: Mapped[list | None] = mapped_column(JSON, comment='["셔츠 소매를 한 번 접어...", ...]')

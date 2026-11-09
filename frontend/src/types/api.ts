@@ -178,14 +178,62 @@ export interface OutfitClothing {
   image_url: string
 }
 
+export interface GuideReason {
+  /** 기온 / 비 / 일정 / 분위기 / 색 조합 / 소재 */
+  tag: string
+  title: string
+  body: string
+}
+
+export type FeedbackRating = 'LIKE' | 'DISLIKE'
+
+export const FEEDBACK_REASONS = {
+  TOO_COLD: '추울 것 같아요',
+  TOO_HOT: '더울 것 같아요',
+  TOO_FORMAL: '너무 격식 있어요',
+  TOO_CASUAL: '너무 편해 보여요',
+  DONT_LIKE_COMBO: '색·조합이 별로예요',
+  IN_LAUNDRY: '세탁 중인 옷이 있어요',
+} as const
+export type FeedbackReason = keyof typeof FEEDBACK_REASONS
+
+export interface Feedback {
+  rating: FeedbackRating
+  reasons: FeedbackReason[] | null
+  comment: string | null
+  updated_at: string
+}
+
+export interface FeedbackIn {
+  rating: FeedbackRating
+  reasons: FeedbackReason[]
+  comment: string | null
+  laundry_item_ids: number[]
+}
+
 export interface Outfit {
   id: number
   rank: number
   summary: string | null
-  reasons: unknown[] | null
+  /** 스타일리스트 인사말 (가이드를 만들기 전엔 null) */
+  intro: string | null
+  reasons: GuideReason[] | null
   tips: string[] | null
   is_selected: boolean
   items: { slot: Category; clothing_item: OutfitClothing }[]
+  feedback: Feedback | null
+}
+
+export interface OutfitDetail extends Outfit {
+  recommendation: {
+    id: number
+    target_date: string
+    location_name: string | null
+    weather: Weather
+    schedule_snapshot: { title: string; start_time: string | null; is_important: boolean }[] | null
+    situations: string[]
+    mood: Mood | null
+  }
 }
 
 export interface Recommendation {

@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
-from app.api.routes import auth, clothes, recommendations, schedules, weather
+from app.api.routes import auth, clothes, outfits, recommendations, schedules, weather
 from app.core.config import settings
 from app.db.session import engine
 from app.services import images
@@ -46,6 +46,7 @@ app.include_router(clothes.router, prefix=api_prefix)
 app.include_router(weather.router, prefix=api_prefix)
 app.include_router(schedules.router, prefix=api_prefix)
 app.include_router(recommendations.router, prefix=api_prefix)
+app.include_router(outfits.router, prefix=api_prefix)
 
 
 @app.get("/api/health", tags=["health"])

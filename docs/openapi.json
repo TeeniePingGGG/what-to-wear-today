@@ -868,10 +868,116 @@
         ]
       }
     },
+    "/api/outfits/{outfit_id}": {
+      "get": {
+        "tags": [
+          "outfits"
+        ],
+        "summary": "Get Outfit",
+        "description": "코디 상세 (옷, 그날의 조건, 가이드, 피드백).",
+        "operationId": "get_outfit_api_outfits__outfit_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "outfit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Outfit Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutfitDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/outfits/{outfit_id}/guide": {
+      "post": {
+        "tags": [
+          "outfits"
+        ],
+        "summary": "Create Guide",
+        "description": "AI 스타일리스트 가이드(추천 이유·연출 팁)를 만든다. 이미 있으면 그대로 돌려준다 (regenerate=true 면 새로).",
+        "operationId": "create_guide_api_outfits__outfit_id__guide_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "outfit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Outfit Id"
+            }
+          },
+          {
+            "name": "regenerate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Regenerate"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutfitDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/outfits/{outfit_id}/select": {
       "post": {
         "tags": [
-          "recommendations"
+          "outfits"
         ],
         "summary": "Select Outfit",
         "description": "'이걸로 입을게요' — 오늘 입을 코디로 정하고 옷마다 착용 기록을 남긴다. 같은 추천의 다른 코디는 선택 해제.",
@@ -902,6 +1008,103 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/outfits/{outfit_id}/feedback": {
+      "put": {
+        "tags": [
+          "outfits"
+        ],
+        "summary": "Put Feedback",
+        "description": "좋아요/아쉬워요 피드백 저장 (다시 보내면 덮어씀). 다음 추천 때 AI에게 전달된다.\n\n'세탁 중' 이유와 함께 laundry_item_ids 를 보내면 그 옷들은 세탁 중으로 바뀌어 추천에서 빠진다.",
+        "operationId": "put_feedback_api_outfits__outfit_id__feedback_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "outfit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Outfit Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedbackIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutfitDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "outfits"
+        ],
+        "summary": "Delete Feedback",
+        "description": "피드백 취소.",
+        "operationId": "delete_feedback_api_outfits__outfit_id__feedback_delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "outfit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Outfit Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
           },
           "422": {
             "description": "Validation Error",
@@ -1620,6 +1823,129 @@
         "title": "ClothingUpdate",
         "description": "사용자 검수/수정 — 보낸 필드만 바뀐다."
       },
+      "FeedbackIn": {
+        "properties": {
+          "rating": {
+            "$ref": "#/components/schemas/FeedbackRating"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "title": "Reasons",
+            "description": "이유 코드: TOO_COLD, TOO_HOT, TOO_FORMAL, TOO_CASUAL, DONT_LIKE_COMBO, IN_LAUNDRY",
+            "default": []
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "laundry_item_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "title": "Laundry Item Ids",
+            "description": "세탁 중으로 바꿀 옷 id (IN_LAUNDRY 일 때)",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "rating"
+        ],
+        "title": "FeedbackIn"
+      },
+      "FeedbackOut": {
+        "properties": {
+          "rating": {
+            "$ref": "#/components/schemas/FeedbackRating"
+          },
+          "reasons": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasons"
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rating",
+          "reasons",
+          "comment",
+          "updated_at"
+        ],
+        "title": "FeedbackOut"
+      },
+      "FeedbackRating": {
+        "type": "string",
+        "enum": [
+          "LIKE",
+          "DISLIKE"
+        ],
+        "title": "FeedbackRating"
+      },
+      "GuideReason": {
+        "properties": {
+          "tag": {
+            "type": "string",
+            "title": "Tag",
+            "description": "짧은 분류: 기온 / 비 / 일정 / 분위기 / 색 조합 / 소재 중 하나"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "20자 이내 소제목"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body",
+            "description": "70자 이내 설명"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tag",
+          "title",
+          "body"
+        ],
+        "title": "GuideReason"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1794,6 +2120,109 @@
         ],
         "title": "OutfitClothingOut"
       },
+      "OutfitDetailOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "rank": {
+            "type": "integer",
+            "title": "Rank"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "intro": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intro",
+            "description": "스타일리스트 인사말 (가이드를 만들기 전엔 null)"
+          },
+          "reasons": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/GuideReason"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasons",
+            "description": "상세 추천 이유 (가이드를 만들기 전엔 null)"
+          },
+          "tips": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tips",
+            "description": "스타일링 팁 (가이드를 만들기 전엔 null)"
+          },
+          "is_selected": {
+            "type": "boolean",
+            "title": "Is Selected"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OutfitItemOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FeedbackOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "recommendation": {
+            "$ref": "#/components/schemas/RecommendationContextOut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "rank",
+          "summary",
+          "intro",
+          "reasons",
+          "tips",
+          "is_selected",
+          "items",
+          "feedback",
+          "recommendation"
+        ],
+        "title": "OutfitDetailOut"
+      },
       "OutfitItemOut": {
         "properties": {
           "slot": {
@@ -1831,10 +2260,24 @@
             ],
             "title": "Summary"
           },
+          "intro": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intro",
+            "description": "스타일리스트 인사말 (가이드를 만들기 전엔 null)"
+          },
           "reasons": {
             "anyOf": [
               {
-                "items": {},
+                "items": {
+                  "$ref": "#/components/schemas/GuideReason"
+                },
                 "type": "array"
               },
               {
@@ -1842,12 +2285,14 @@
               }
             ],
             "title": "Reasons",
-            "description": "상세 추천 이유 (기능 3에서 채움)"
+            "description": "상세 추천 이유 (가이드를 만들기 전엔 null)"
           },
           "tips": {
             "anyOf": [
               {
-                "items": {},
+                "items": {
+                  "type": "string"
+                },
                 "type": "array"
               },
               {
@@ -1855,7 +2300,7 @@
               }
             ],
             "title": "Tips",
-            "description": "스타일링 팁 (기능 3에서 채움)"
+            "description": "스타일링 팁 (가이드를 만들기 전엔 null)"
           },
           "is_selected": {
             "type": "boolean",
@@ -1867,6 +2312,16 @@
             },
             "type": "array",
             "title": "Items"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FeedbackOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -1874,10 +2329,12 @@
           "id",
           "rank",
           "summary",
+          "intro",
           "reasons",
           "tips",
           "is_selected",
-          "items"
+          "items",
+          "feedback"
         ],
         "title": "OutfitOut"
       },
@@ -2006,6 +2463,76 @@
           "longitude"
         ],
         "title": "RecommendRequest"
+      },
+      "RecommendationContextOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "target_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Target Date"
+          },
+          "location_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location Name"
+          },
+          "weather": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Weather"
+          },
+          "schedule_snapshot": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schedule Snapshot"
+          },
+          "situations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Situations"
+          },
+          "mood": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Mood"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "target_date",
+          "location_name",
+          "weather",
+          "schedule_snapshot",
+          "situations",
+          "mood"
+        ],
+        "title": "RecommendationContextOut",
+        "description": "코디 상세 화면에서 보여 줄 '그날의 조건'."
       },
       "RecommendationOut": {
         "properties": {
@@ -2496,7 +3023,12 @@
           "pop_max": {
             "type": "integer",
             "title": "Pop Max",
-            "description": "오늘 최고 강수확률 %"
+            "description": "오늘 하루 최고 강수확률 % (이미 지난 시간 포함)"
+          },
+          "pop_rest": {
+            "type": "integer",
+            "title": "Pop Rest",
+            "description": "지금부터 오늘 남은 시간의 최고 강수확률 %"
           },
           "rain_from": {
             "anyOf": [
@@ -2548,6 +3080,7 @@
           "temp_min",
           "temp_range",
           "pop_max",
+          "pop_rest",
           "rain_from",
           "rain_until",
           "hourly",

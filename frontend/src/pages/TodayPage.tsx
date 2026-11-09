@@ -155,11 +155,12 @@ export default function TodayPage() {
                 ))}
               </div>
 
-              {current.summary && (
-                <div className={s.reasonBox}>
-                  <p>{current.summary}</p>
-                </div>
-              )}
+              <div className={s.reasonBox}>
+                {current.summary && <p>{current.summary}</p>}
+                <Link to={`/guide/${current.id}`} style={{ fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
+                  스타일리스트 설명 보기 →
+                </Link>
+              </div>
 
               {select.error && <p className="error-text">{errorMessage(select.error)}</p>}
               <div className={s.actions}>

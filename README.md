@@ -110,9 +110,8 @@ http://localhost:5173 접속 → 회원가입 → 옷 등록. `/api` 요청은 V
 | 회원가입 / 로그인 / 내 정보 (`/api/auth/*`) | ✅ |
 | 옷 등록 · 목록 · 수정 · 삭제 (`/api/clothes`) | ✅ |
 | 반응형 레이아웃 (모바일 하단 탭 / 데스크톱 사이드바) | ✅ |
-| 홈 · 일정 입력 화면 | ✅ 실제 데이터 · 스타일리스트 가이드 화면은 🟡 샘플 |
+| 홈 · 일정 입력 · 스타일리스트 가이드 화면 | ✅ |
 | 기능 1: 배경 제거 + Vision AI 자동 태깅 → 사용자 검수, 여러 벌 한 번에 등록 (`/api/clothes/analyze`, `/api/clothes/bulk`) | ✅ |
 | 기능 2: 날씨 API + 일정 + LLM 코디 추천 (`/api/weather`, `/api/schedules`, `/api/recommendations`) | ✅ |
-| 기능 3: AI 가이드 생성 + 피드백 반영 | ⬜ 4주차 |
+| 기능 3: AI 스타일리스트 가이드 + 피드백 저장·다음 추천 반영 (`/api/outfits/{id}/guide`, `/api/outfits/{id}/feedback`) | ✅ |
 
-코드에서 `TODO(기능1)`, `TODO(기능2)`, `TODO(기능3)` 으로 검색하면 연결할 위치가 나와요.

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { assetUrl, errorMessage } from '../api/client'
-import { useClothes } from '../api/clothes'
+import { useClothes, useUpdateClothing } from '../api/clothes'
 import { Icon } from '../components/Icon'
 import { CATEGORY_LABEL, SEASON_LABEL, type Category } from '../types/api'
 import s from './pages.module.css'
@@ -11,6 +11,7 @@ const TABS: (Category | 'ALL')[] = ['ALL', 'TOP', 'BOTTOM', 'OUTER', 'SHOES', 'A
 export default function ClosetPage() {
   const [tab, setTab] = useState<Category | 'ALL'>('ALL')
   const { data, isLoading, error } = useClothes(tab === 'ALL' ? {} : { category: tab })
+  const update = useUpdateClothing()
 
   return (
     <div className={s.page}>
@@ -56,7 +57,16 @@ export default function ClosetPage() {
         <div className={s.closetGrid}>
           {data.map((item) => (
             <article key={item.id} className={s.closetCard}>
-              <img className={s.closetImg} src={assetUrl(item.image_url)} alt={item.name} loading="lazy" />
+              <div style={{ position: 'relative' }}>
+                <img
+                  className={s.closetImg}
+                  src={assetUrl(item.image_url)}
+                  alt={item.name}
+                  loading="lazy"
+                  style={item.status === 'LAUNDRY' ? { opacity: 0.5 } : undefined}
+                />
+                {item.status === 'LAUNDRY' && <span className={s.laundryBadge}>세탁 중</span>}
+              </div>
               <div style={{ padding: '0 2px' }}>
                 <div className={s.ellipsis} style={{ fontSize: 13, fontWeight: 600 }}>
                   {item.name}
@@ -65,6 +75,17 @@ export default function ClosetPage() {
                   {[item.color_name, item.seasons.map((x) => SEASON_LABEL[x]).join('/')].filter(Boolean).join(' · ')}
                 </div>
               </div>
+              {item.status === 'LAUNDRY' && (
+                <button
+                  type="button"
+                  className="btn"
+                  style={{ height: 34, fontSize: 13, padding: '0 8px' }}
+                  disabled={update.isPending}
+                  onClick={() => update.mutate({ id: item.id, status: 'ACTIVE' })}
+                >
+                  세탁 완료
+                </button>
+              )}
             </article>
           ))}
         </div>
