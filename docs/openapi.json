@@ -238,7 +238,7 @@
           "clothes"
         ],
         "summary": "Analyze",
-        "description": "사진을 저장하고 배경 제거 + AI 분석 결과를 돌려준다. 옷장에는 아직 저장하지 않는다.\n\nAI 분석이 실패해도 이미지는 돌려주므로(ai_error 에 이유) 사용자가 직접 입력해 저장할 수 있다.",
+        "description": "사진 속 옷을 전부 찾아 한 벌씩 잘라 배경을 지우고 AI 분석 결과를 돌려준다. 옷장에는 아직 저장하지 않는다.",
         "operationId": "analyze_api_clothes_analyze_post",
         "requestBody": {
           "content": {
@@ -256,7 +256,54 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AnalyzeResponse"
+                  "$ref": "#/components/schemas/MultiAnalyzeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/clothes/redetect": {
+      "post": {
+        "tags": [
+          "clothes"
+        ],
+        "summary": "Redetect",
+        "description": "이미 올린 원본 사진으로 옷 찾기를 다시 (AI 서버 혼잡 등으로 실패했을 때).",
+        "operationId": "redetect_api_clothes_redetect_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RedetectRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MultiAnalyzeResponse"
                 }
               }
             }
@@ -285,7 +332,7 @@
           "clothes"
         ],
         "summary": "Reanalyze",
-        "description": "이미 올린 사진으로 AI 분석만 다시 (서버 혼잡 등으로 실패했을 때).",
+        "description": "잘라낸 옷 한 벌만 AI 분석을 다시.",
         "operationId": "reanalyze_api_clothes_reanalyze_post",
         "requestBody": {
           "content": {
@@ -304,6 +351,57 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ReanalyzeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/clothes/bulk": {
+      "post": {
+        "tags": [
+          "clothes"
+        ],
+        "summary": "Create Clothes Bulk",
+        "description": "여러 벌을 한 번에 저장 (하나라도 문제가 있으면 아무것도 저장하지 않음).",
+        "operationId": "create_clothes_bulk_api_clothes_bulk_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClothingBulkCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ClothingOut"
+                  },
+                  "type": "array",
+                  "title": "Response Create Clothes Bulk Api Clothes Bulk Post"
                 }
               }
             }
@@ -488,16 +586,12 @@
   },
   "components": {
     "schemas": {
-      "AnalyzeResponse": {
+      "AnalyzedItem": {
         "properties": {
-          "original_image_url": {
-            "type": "string",
-            "title": "Original Image Url"
-          },
           "image_url": {
             "type": "string",
             "title": "Image Url",
-            "description": "배경 제거된 이미지 (실패 시 원본과 같음)"
+            "description": "옷 한 벌만 잘라 배경을 지운 이미지"
           },
           "background_removed": {
             "type": "boolean",
@@ -511,8 +605,7 @@
               {
                 "type": "null"
               }
-            ],
-            "description": "AI 분석 결과. 실패하면 null"
+            ]
           },
           "ai_raw": {
             "anyOf": [
@@ -526,30 +619,17 @@
             ],
             "title": "Ai Raw",
             "description": "저장할 때 ai_analysis 로 그대로 보내 주세요"
-          },
-          "ai_error": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ai Error",
-            "description": "AI 분석 실패 이유 (사용자 표시용)"
           }
         },
         "type": "object",
         "required": [
-          "original_image_url",
           "image_url",
           "background_removed",
           "analysis",
-          "ai_raw",
-          "ai_error"
+          "ai_raw"
         ],
-        "title": "AnalyzeResponse"
+        "title": "AnalyzedItem",
+        "description": "잘라내고 배경 제거한 옷 한 벌 + AI 분석 결과."
       },
       "Body_analyze_api_clothes_analyze_post": {
         "properties": {
@@ -557,7 +637,7 @@
             "type": "string",
             "contentMediaType": "application/octet-stream",
             "title": "Image",
-            "description": "옷 사진 (jpg/png/webp, 10MB 이하)"
+            "description": "옷 사진 (jpg/png/webp, 10MB 이하). 여러 벌을 같이 찍어도 됨"
           }
         },
         "type": "object",
@@ -679,6 +759,24 @@
         ],
         "title": "ClothingAnalysis",
         "description": "Vision AI 가 돌려주는 형식 (Gemini response_schema 로도 사용)."
+      },
+      "ClothingBulkCreate": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ClothingCreate"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "ClothingBulkCreate"
       },
       "ClothingCreate": {
         "properties": {
@@ -1202,6 +1300,41 @@
         ],
         "title": "LoginRequest"
       },
+      "MultiAnalyzeResponse": {
+        "properties": {
+          "original_image_url": {
+            "type": "string",
+            "title": "Original Image Url"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AnalyzedItem"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "찾은 옷들. AI 실패 시 사진 전체 1장"
+          },
+          "ai_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Error",
+            "description": "AI 분석 실패 이유 (사용자 표시용)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "original_image_url",
+          "items",
+          "ai_error"
+        ],
+        "title": "MultiAnalyzeResponse"
+      },
       "ReanalyzeRequest": {
         "properties": {
           "image_url": {
@@ -1260,6 +1393,20 @@
           "ai_error"
         ],
         "title": "ReanalyzeResponse"
+      },
+      "RedetectRequest": {
+        "properties": {
+          "original_image_url": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Original Image Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "original_image_url"
+        ],
+        "title": "RedetectRequest"
       },
       "Season": {
         "type": "string",

@@ -74,12 +74,18 @@ export interface ClothingAnalysis {
   low_confidence_fields: string[]
 }
 
-export interface AnalyzeResponse {
-  original_image_url: string
+export interface AnalyzedItem {
+  /** 옷 한 벌만 잘라 배경을 지운 이미지 */
   image_url: string
   background_removed: boolean
   analysis: ClothingAnalysis | null
   ai_raw: Record<string, unknown> | null
+}
+
+export interface MultiAnalyzeResponse {
+  original_image_url: string
+  /** 찾은 옷들. AI 실패 시 사진 전체 1장 */
+  items: AnalyzedItem[]
   ai_error: string | null
 }
 

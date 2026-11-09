@@ -50,6 +50,20 @@ def to_png(img: Image.Image) -> bytes:
     return buf.getvalue()
 
 
+def crop_box(img: Image.Image, box_2d: list[int], pad_ratio: float = 0.03) -> Image.Image | None:
+    """AI가 준 [ymin, xmin, ymax, xmax] (0~1000) 영역을 잘라낸다. 너무 작거나 이상하면 None."""
+    if len(box_2d) != 4:
+        return None
+    ymin, xmin, ymax, xmax = (min(max(v, 0), 1000) / 1000 for v in box_2d)
+    if xmax - xmin < 0.04 or ymax - ymin < 0.04:  # 사진의 4%보다 작으면 잘못 찾은 것으로 봄
+        return None
+    w, h = img.size
+    pad = pad_ratio * max(w, h)
+    left, top = max(xmin * w - pad, 0), max(ymin * h - pad, 0)
+    right, bottom = min(xmax * w + pad, w), min(ymax * h + pad, h)
+    return img.crop((round(left), round(top), round(right), round(bottom)))
+
+
 def _get_session():
     global _session
     with _session_lock:

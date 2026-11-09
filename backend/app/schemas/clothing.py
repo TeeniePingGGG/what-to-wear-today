@@ -65,13 +65,41 @@ class ClothingAnalysis(BaseModel):
         return v.strip()[:100]
 
 
-class AnalyzeResponse(BaseModel):
-    original_image_url: str
-    image_url: str = Field(description="배경 제거된 이미지 (실패 시 원본과 같음)")
+class DetectedClothing(ClothingAnalysis):
+    """여러 벌 감지용: 옷 한 벌의 정보 + 사진 속 위치."""
+
+    box_2d: list[int] = Field(
+        description="[ymin, xmin, ymax, xmax], 사진 크기를 0~1000 으로 정규화한 좌표"
+    )
+
+
+class DetectionResult(BaseModel):
+    """Vision AI 가 돌려주는 여러 벌 감지 결과 (Gemini response_schema)."""
+
+    items: list[DetectedClothing]
+
+
+class AnalyzedItem(BaseModel):
+    """잘라내고 배경 제거한 옷 한 벌 + AI 분석 결과."""
+
+    image_url: str = Field(description="옷 한 벌만 잘라 배경을 지운 이미지")
     background_removed: bool
-    analysis: ClothingAnalysis | None = Field(description="AI 분석 결과. 실패하면 null")
+    analysis: ClothingAnalysis | None
     ai_raw: dict | None = Field(description="저장할 때 ai_analysis 로 그대로 보내 주세요")
+
+
+class MultiAnalyzeResponse(BaseModel):
+    original_image_url: str
+    items: list[AnalyzedItem] = Field(description="찾은 옷들. AI 실패 시 사진 전체 1장")
     ai_error: str | None = Field(description="AI 분석 실패 이유 (사용자 표시용)")
+
+
+class RedetectRequest(BaseModel):
+    original_image_url: str = Field(max_length=500)
+
+
+class ClothingBulkCreate(BaseModel):
+    items: list[ClothingCreate] = Field(min_length=1, max_length=20)
 
 
 class ReanalyzeRequest(BaseModel):

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { AnalyzeResponse, Category, Clothing, ClothingCreate, ClothingStatus, ReanalyzeResponse } from '../types/api'
+import type { Category, Clothing, ClothingCreate, ClothingStatus, MultiAnalyzeResponse, ReanalyzeResponse } from '../types/api'
 import { api } from './client'
 
 export function useClothes(params: { category?: Category; status?: ClothingStatus } = {}) {
@@ -9,14 +9,22 @@ export function useClothes(params: { category?: Category; status?: ClothingStatu
   })
 }
 
-/** 사진 → 배경 제거 + AI 분석 (아직 옷장에 저장하지 않음) */
+/** 사진 → AI가 옷을 전부 찾아 한 벌씩 잘라 배경 제거 + 분석 (아직 옷장에 저장하지 않음) */
 export function useAnalyzeClothing() {
   return useMutation({
     mutationFn: async (image: File) => {
       const form = new FormData()
       form.append('image', image)
-      return (await api.post<AnalyzeResponse>('/clothes/analyze', form)).data
+      return (await api.post<MultiAnalyzeResponse>('/clothes/analyze', form)).data
     },
+  })
+}
+
+/** 이미 올린 원본 사진으로 옷 찾기를 다시 (AI 실패 시) */
+export function useRedetectClothing() {
+  return useMutation({
+    mutationFn: async (originalImageUrl: string) =>
+      (await api.post<MultiAnalyzeResponse>('/clothes/redetect', { original_image_url: originalImageUrl })).data,
   })
 }
 
@@ -28,7 +36,16 @@ export function useReanalyzeClothing() {
   })
 }
 
-/** 검수한 값으로 옷장에 저장 */
+/** 여러 벌을 한 번에 저장 */
+export function useCreateClothesBulk() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (items: ClothingCreate[]) => (await api.post<Clothing[]>('/clothes/bulk', { items })).data,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['clothes'] }),
+  })
+}
+
+/** 검수한 값으로 옷장에 저장 (한 벌) */
 export function useCreateClothing() {
   const qc = useQueryClient()
   return useMutation({

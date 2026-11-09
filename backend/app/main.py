@@ -15,7 +15,8 @@ from app.services import images
 
 # app.* 로거의 INFO 로그(처리 시간 등)를 터미널에 보이게
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:     [%(name)s] %(message)s")
-logging.getLogger("httpx").setLevel(logging.WARNING)
+for _name in ("httpx", "httpx2"):  # 요청마다 찍히는 로그는 숨김
+    logging.getLogger(_name).setLevel(logging.WARNING)
 
 
 
