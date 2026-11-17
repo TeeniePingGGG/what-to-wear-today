@@ -18,7 +18,7 @@ from app.core.config import settings
 
 log = logging.getLogger(__name__)
 
-RETRY_DELAYS = (2,)  # 서버 혼잡(5xx) 시 같은 모델로 재시도하기 전 대기 시간(초)
+RETRY_DELAYS = (1,)  # 마지막(예비) 모델이 혼잡(5xx)할 때 다시 시도하기 전 대기 시간(초)
 REQUEST_TIMEOUT_S = 40  # 요청 1번의 최대 대기 시간 (여러 벌 사진은 응답이 길어서 넉넉히)
 TOTAL_BUDGET_S = 85  # 재시도·예비 모델 포함 전체 최대 시간 (Vercel maxDuration 120초 안쪽)
 
@@ -69,6 +69,8 @@ def _call(client: genai.Client, model: str, contents: list, schema: type[BaseMod
             response_schema=schema,
             temperature=temperature,
             thinking_config=thinking,
+            # 함수 호출 기능은 안 써서 끔 (로그의 'AFC is enabled …' 줄도 사라짐)
+            automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
         ),
     )
 
@@ -83,7 +85,9 @@ def generate(contents: list, schema: type[T], temperature: float = 0.2) -> tuple
     started = time.monotonic()
     busy = AIError("AI 서버가 지금 붐벼요. 잠시 후 다시 시도해 주세요.")
 
-    for model in _models():
+    models = _models()
+    for model in models:
+        is_last = model == models[-1]
         for attempt in range(len(RETRY_DELAYS) + 1):
             # 남은 시간이 요청 1번 최대 시간보다 짧으면 시작하지 않음 (서버 강제 종료 방지)
             if time.monotonic() - started + REQUEST_TIMEOUT_S > TOTAL_BUDGET_S:
@@ -109,6 +113,8 @@ def generate(contents: list, schema: type[T], temperature: float = 0.2) -> tuple
             except genai_errors.APIError as e:  # 5xx: 서버 혼잡·일시 오류
                 log.warning("Gemini 서버 오류 (%s, %d번째 시도): %s", model, attempt + 1, e)
                 last_error = busy
+                if not is_last:
+                    break  # 혼잡한 모델은 다시 해도 또 실패하기 쉬워서 바로 예비 모델로 (재시도 대기 시간 절약)
                 if attempt < len(RETRY_DELAYS):
                     time.sleep(RETRY_DELAYS[attempt])
                 continue
