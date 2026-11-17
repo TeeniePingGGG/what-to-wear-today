@@ -96,6 +96,10 @@ http://localhost:5173 접속 → 회원가입 → 옷 등록. `/api` 요청은 V
 - `F5` → **Full Stack (백엔드 + 프론트)**: 서버 두 개를 디버그 모드로 한 번에 실행
 - `Ctrl+Shift+P` → **Tasks: Run Task** → `db: up (docker)` / `db: migrate`
 
+## 무료 배포 (Vercel + TiDB Cloud)
+
+[docs/deploy.md](docs/deploy.md) 에 단계별로 정리돼 있어요.
+
 ## DB 변경하는 법
 1. `backend/app/models/` 에서 모델 수정
 2. `alembic revision --autogenerate -m "변경 내용"` → `alembic/versions/` 에 생성된 파일 확인

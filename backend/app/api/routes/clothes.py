@@ -8,7 +8,6 @@
 
 import logging
 import time
-from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, File, HTTPException, Query, UploadFile, status
@@ -19,7 +18,6 @@ from sqlalchemy import select
 from app.api.deps import CurrentUser, DbSession
 from app.models import ClothingItem
 from app.models.enums import Category, ClothingStatus
-from app.core.config import settings
 from app.schemas.clothing import (
     AnalyzedItem,
     ClothingAnalysis,
@@ -128,7 +126,7 @@ def _check_owned(user_id: int, url: str | None) -> None:
 
 
 def _load_upload(url: str) -> Image.Image:
-    return images.open_image((Path(settings.upload_dir) / url.removeprefix("/uploads/")).read_bytes())
+    return images.open_image(storage.read_upload(url))
 
 
 @router.post("/analyze", response_model=MultiAnalyzeResponse)

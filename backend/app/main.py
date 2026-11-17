@@ -19,7 +19,6 @@ for _name in ("httpx", "httpx2"):  # 요청마다 찍히는 로그는 숨김
     logging.getLogger(_name).setLevel(logging.WARNING)
 
 
-
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     # 배경 제거 모델(수십 MB)을 미리 메모리에 올려 둠 — 서버 시작은 막지 않도록 별도 스레드
@@ -37,8 +36,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-Path(settings.upload_dir).mkdir(parents=True, exist_ok=True)
-app.mount("/uploads", StaticFiles(directory=settings.upload_dir), name="uploads")
+if settings.storage == "local":  # 배포(Vercel Blob)에선 사진을 Blob 주소로 바로 보여 줌
+    Path(settings.upload_dir).mkdir(parents=True, exist_ok=True)
+    app.mount("/uploads", StaticFiles(directory=settings.upload_dir), name="uploads")
 
 api_prefix = "/api"
 app.include_router(auth.router, prefix=api_prefix)

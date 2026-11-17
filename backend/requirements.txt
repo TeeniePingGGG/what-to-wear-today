@@ -10,3 +10,5 @@ google-genai==3.0.0
 Pillow==13.0.0
 tzdata==2026.6  # timezone data for Asia/Seoul on Windows
 httpx==0.28.1
+vercel-blob==0.5.1
+certifi==2026.10.23

@@ -1,7 +1,6 @@
 from logging.config import fileConfig
 
 from alembic import context
-from sqlalchemy import engine_from_config, pool
 
 from app.core.config import settings
 from app.models import Base
@@ -28,9 +27,9 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}), prefix="sqlalchemy.", poolclass=pool.NullPool
-    )
+    # 앱과 같은 엔진 설정을 씀 (DB_SSL=true 면 SSL 로 접속 — TiDB Cloud 등)
+    from app.db.session import engine as connectable
+
     with connectable.connect() as connection:
         context.configure(connection=connection, target_metadata=target_metadata, compare_type=True)
         with context.begin_transaction():

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Category, Clothing, ClothingCreate, ClothingStatus, MultiAnalyzeResponse, ReanalyzeResponse } from '../types/api'
+import { shrinkImage } from '../utils/shrinkImage'
 import { api } from './client'
 
 export function useClothes(params: { category?: Category; status?: ClothingStatus } = {}) {
@@ -14,7 +15,7 @@ export function useAnalyzeClothing() {
   return useMutation({
     mutationFn: async (image: File) => {
       const form = new FormData()
-      form.append('image', image)
+      form.append('image', await shrinkImage(image))
       return (await api.post<MultiAnalyzeResponse>('/clothes/analyze', form)).data
     },
   })

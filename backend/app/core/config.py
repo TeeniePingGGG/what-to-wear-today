@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     jwt_expire_minutes: int = 60 * 24 * 7
     cors_origins: str = "http://localhost:5173"
     upload_dir: str = "uploads"
+    storage: str = "local"  # local: 내 컴퓨터 폴더 / blob: Vercel Blob (배포용)
+    db_ssl: bool = False  # TiDB Cloud 등 SSL 연결이 필요한 DB 면 true
 
     # 기능1: Vision AI (Gemini) + 배경 제거
     gemini_api_key: str = ""
