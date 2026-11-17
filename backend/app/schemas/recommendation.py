@@ -9,10 +9,11 @@ class RecommendRequest(BaseModel):
     latitude: float = Field(ge=-90, le=90)
     longitude: float = Field(ge=-180, le=180)
     location_name: str | None = Field(default=None, max_length=100)
-    situations: list[str] = Field(default=[], max_length=10, description='오늘의 상황 (예: ["발표", "저녁 약속"])')
+    situations: list[str] = Field(default=[], max_length=10, description='그날의 상황 (예: ["발표", "저녁 약속"])')
     mood: Mood | None = None
     user_note: str | None = Field(default=None, max_length=500, description="AI에게 더 알려줄 것")
     raw_weather: dict | None = Field(default=None, description="브라우저가 Open-Meteo 에서 받아 온 원본 응답 (없으면 서버가 조회)")
+    target_date: dt.date | None = Field(default=None, description="코디를 입을 날: 오늘 또는 내일 (비우면 오늘)")
 
 
 # --- LLM 이 돌려주는 형식 (Gemini response_schema) ---

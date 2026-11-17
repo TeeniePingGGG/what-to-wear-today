@@ -2,23 +2,22 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMe } from '../api/auth'
 import { assetUrl, errorMessage } from '../api/client'
-import { useSelectOutfit, useTodayRecommendation } from '../api/recommendations'
+import { useRecommendation, useSelectOutfit } from '../api/recommendations'
 import { useSchedules } from '../api/schedules'
 import { useWeather } from '../api/weather'
 import { Icon } from '../components/Icon'
 import { useCoords } from '../hooks/useCoords'
 import { CATEGORY_LABEL, type Category, type Outfit, type Schedule } from '../types/api'
+import { daySuffix, PLAN_DAY_LABEL, planDate, planDateLabel, usePlanDay, type PlanDay } from '../utils/planDay'
 import s from './pages.module.css'
-
-const todayLabel = new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' }).format(new Date())
 
 // 코디 안에서 옷을 보여 줄 순서
 const SLOT_ORDER: Category[] = ['OUTER', 'TOP', 'DRESS', 'BOTTOM', 'SHOES', 'BAG', 'ACCESSORY']
 
 const hhmm = (t: string | null) => (t ? t.slice(0, 5) : '')
 
-function scheduleLine(list: Schedule[]): string {
-  if (list.length === 0) return '오늘 일정 추가하기'
+function scheduleLine(list: Schedule[], dayName: string): string {
+  if (list.length === 0) return `${dayName} 일정 추가하기`
   const main = list.find((x) => x.is_important) ?? list[0]
   const rest = list.length > 1 ? ` 외 ${list.length - 1}개` : ''
   return `${main.start_time ? `${hhmm(main.start_time)} ` : ''}${main.title}${rest}`
@@ -27,9 +26,12 @@ function scheduleLine(list: Schedule[]): string {
 export default function TodayPage() {
   const { data: me } = useMe()
   const { data: coords } = useCoords()
-  const weather = useWeather(coords)
-  const schedules = useSchedules()
-  const rec = useTodayRecommendation()
+  const [day, setDay] = usePlanDay()
+  const date = planDate(day)
+  const dayName = PLAN_DAY_LABEL[day]
+  const weather = useWeather(coords, date)
+  const schedules = useSchedules(date)
+  const rec = useRecommendation(date)
   const select = useSelectOutfit()
   // 사용자가 넘겨 본 조합 번호 (새 추천을 받으면 처음부터)
   const [picked, setPicked] = useState<{ recId: number; index: number } | null>(null)
@@ -49,16 +51,23 @@ export default function TodayPage() {
       <header className={s.header}>
         <div>
           <p className={s.subtitle}>
-            {todayLabel}
+            {planDateLabel(day)}
             {w && ` · ${w.location_name ?? '현재 위치'}`}
           </p>
-          <h1 className={s.title}>{me ? `${me.nickname}님, 오늘 뭐 입지?` : '오늘 뭐 입지?'}</h1>
+          <h1 className={s.title}>{me ? `${me.nickname}님, ${dayName} 뭐 입지?` : `${dayName} 뭐 입지?`}</h1>
+        </div>
+        <div className={s.dayTabs} role="radiogroup" aria-label="코디를 볼 날">
+          {(['today', 'tomorrow'] as PlanDay[]).map((d) => (
+            <button key={d} type="button" role="radio" aria-checked={day === d} onClick={() => setDay(d)}>
+              {PLAN_DAY_LABEL[d]}
+            </button>
+          ))}
         </div>
       </header>
 
       <div className={s.todayGrid}>
         <div className={s.todayCol}>
-          <section className="card" aria-label="오늘 날씨" aria-busy={weather.isLoading}>
+          <section className="card" aria-label={`${dayName} 날씨`} aria-busy={weather.isLoading}>
             {weather.error ? (
               <p className="error-text">{errorMessage(weather.error)}</p>
             ) : !w ? (
@@ -70,7 +79,7 @@ export default function TodayPage() {
                   <div>
                     <div style={{ fontSize: 15, fontWeight: 600 }}>{w.summary}</div>
                     <div className={s.subtitle}>
-                      최고 {w.temp_max}° · 최저 {w.temp_min}°
+                      {day === 'tomorrow' && '아침 8시 기준 · '}최고 {w.temp_max}° · 최저 {w.temp_min}°
                     </div>
                   </div>
                 </div>
@@ -97,16 +106,16 @@ export default function TodayPage() {
             )}
           </section>
 
-          <Link to="/context" className={s.rowLink}>
+          <Link to={`/context${daySuffix(day)}`} className={s.rowLink}>
             <span className={s.iconBadge}>
               <Icon name="calendar" />
             </span>
             <span style={{ flex: 1, minWidth: 0 }}>
               <span className={s.subtitle} style={{ display: 'block', marginTop: 0 }}>
-                오늘 일정 · 눌러서 수정
+                {dayName} 일정 · 눌러서 수정
               </span>
               <span className={s.ellipsis} style={{ display: 'block', fontSize: 15, fontWeight: 600 }}>
-                {schedules.data ? scheduleLine(schedules.data) : '…'}
+                {schedules.data ? scheduleLine(schedules.data, dayName) : '…'}
               </span>
             </span>
             <Icon name="chevronRight" size={18} />
@@ -116,7 +125,7 @@ export default function TodayPage() {
         <section className="card" style={{ borderRadius: 'var(--radius-xl)', padding: 18 }} aria-labelledby="outfit-title">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
             <h2 id="outfit-title" className={s.sectionTitle} style={{ fontSize: 18 }}>
-              오늘의 추천 코디
+              {dayName}의 추천 코디
             </h2>
             {outfits.length > 0 && (
               <span className={s.countBadge}>
@@ -131,9 +140,13 @@ export default function TodayPage() {
           {rec.data === null && (
             <div className={s.empty} style={{ padding: '32px 8px' }}>
               <Icon name="sparkle" size={28} />
-              <p>오늘 날씨와 일정에 맞춰 내 옷장에서 코디를 골라 드려요.</p>
-              <Link to="/context" className="btn btn-primary">
-                오늘 코디 추천받기
+              <p>
+                {day === 'tomorrow'
+                  ? '내일 날씨와 일정에 맞춰 미리 코디를 골라 둘 수 있어요.'
+                  : '오늘 날씨와 일정에 맞춰 내 옷장에서 코디를 골라 드려요.'}
+              </p>
+              <Link to={`/context${daySuffix(day)}`} className="btn btn-primary">
+                {dayName} 코디 추천받기
               </Link>
             </div>
           )}
@@ -188,7 +201,7 @@ export default function TodayPage() {
                   </button>
                 )}
               </div>
-              <Link to="/context" className={s.subtitle} style={{ display: 'block', textAlign: 'center', marginTop: 12 }}>
+              <Link to={`/context${daySuffix(day)}`} className={s.subtitle} style={{ display: 'block', textAlign: 'center', marginTop: 12 }}>
                 일정·상황을 바꿔서 다시 추천받기
               </Link>
             </>

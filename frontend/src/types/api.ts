@@ -130,6 +130,8 @@ export interface Weather {
   location_name: string | null
   latitude: number
   longitude: number
+  /** 예보 날짜 "YYYY-MM-DD" (내일이면 temp·feels_like·sky 가 아침 8시 예보) */
+  forecast_date?: string | null
   temp: number
   feels_like: number
   sky: string
@@ -140,7 +142,7 @@ export interface Weather {
   temp_range: number
   /** 오늘 하루 최고 강수확률 (지난 시간 포함) */
   pop_max: number
-  /** 지금부터 남은 시간의 최고 강수확률 */
+  /** 지금부터 남은 시간의 최고 강수확률 (내일이면 하루 전체) */
   pop_rest: number
   rain_from: number | null
   rain_until: number | null
@@ -163,6 +165,8 @@ export interface Schedule {
 
 export interface ScheduleCreate {
   title: string
+  /** "YYYY-MM-DD" — 비우면 오늘 */
+  date?: string
   start_time?: string | null
   is_important?: boolean
   is_outdoor?: boolean | null
@@ -256,4 +260,6 @@ export interface RecommendRequest {
   situations: string[]
   mood: Mood | null
   user_note: string | null
+  /** 코디를 입을 날 "YYYY-MM-DD" (오늘 또는 내일) */
+  target_date?: string
 }

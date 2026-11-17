@@ -624,3 +624,36 @@ fieldset:disabled .chip {
   display: block;
   margin-bottom: -4px;
 }
+
+/* 오늘 / 내일 선택 (전날 밤에 내일 코디 미리 보기) */
+.dayTabs {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border-radius: 999px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+}
+
+.dayTabs button {
+  min-width: 64px;
+  height: 36px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-sub);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dayTabs button[aria-checked='true'] {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.dayTabs button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}

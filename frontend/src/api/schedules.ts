@@ -2,11 +2,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Schedule, ScheduleCreate } from '../types/api'
 import { api } from './client'
 
-/** 오늘 일정 */
-export function useSchedules() {
+/** 그날(date: "YYYY-MM-DD") 일정 */
+export function useSchedules(date: string) {
   return useQuery({
-    queryKey: ['schedules', 'today'],
-    queryFn: async () => (await api.get<Schedule[]>('/schedules')).data,
+    queryKey: ['schedules', date],
+    queryFn: async () => (await api.get<Schedule[]>('/schedules', { params: { date } })).data,
   })
 }
 

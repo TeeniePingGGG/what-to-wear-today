@@ -81,11 +81,11 @@ async def fetch_met(client: httpx.AsyncClient, lat: float, lon: float) -> dict:
     res.raise_for_status()
     series = res.json()["properties"]["timeseries"]
 
-    today = clock.today()
+    days = (clock.today(), clock.tomorrow())  # 오늘 + 내일 (Open-Meteo forecast_days=2 와 같게)
     times, temps, feels, pops, codes = [], [], [], [], []
     for entry in series:
         t = datetime.fromisoformat(entry["time"].replace("Z", "+00:00")).astimezone(clock.KST)
-        if t.date() != today:
+        if t.date() not in days:
             continue
         d = entry["data"]
         inst = d["instant"]["details"]
@@ -97,9 +97,12 @@ async def fetch_met(client: httpx.AsyncClient, lat: float, lon: float) -> dict:
         pops.append(_pop(d))
         codes.append(_wmo(symbol))
 
-    if not times:  # 자정 직전처럼 오늘 남은 예보가 없을 때
-        raise ValueError("오늘 남은 MET 예보가 없음")
+    if not times:
+        raise ValueError("오늘·내일 MET 예보가 없음")
 
+    # 날짜별 최고·최저 기온과 최고 강수확률 (오늘은 지난 시간 예보가 없어 남은 시간 기준)
+    daily_days = sorted({x[:10] for x in times})
+    by_day = {k: [i for i, x in enumerate(times) if x.startswith(k)] for k in daily_days}
     return {
         "current": {"temperature_2m": temps[0], "apparent_temperature": feels[0], "weather_code": codes[0]},
         "hourly": {
@@ -110,8 +113,9 @@ async def fetch_met(client: httpx.AsyncClient, lat: float, lon: float) -> dict:
             "weather_code": codes,
         },
         "daily": {
-            "temperature_2m_max": [max(temps)],
-            "temperature_2m_min": [min(temps)],
-            "precipitation_probability_max": [max(pops)],
+            "time": daily_days,
+            "temperature_2m_max": [max(temps[i] for i in by_day[k]) for k in daily_days],
+            "temperature_2m_min": [min(temps[i] for i in by_day[k]) for k in daily_days],
+            "precipitation_probability_max": [max(pops[i] for i in by_day[k]) for k in daily_days],
         },
     }

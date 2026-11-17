@@ -43,26 +43,26 @@ async def create_guide(outfit_id: int, db: DbSession, user: CurrentUser, regener
 
 @router.post("/{outfit_id}/select", response_model=RecommendationOut)
 def select_outfit(outfit_id: int, db: DbSession, user: CurrentUser):
-    """'이걸로 입을게요' — 오늘 입을 코디로 정하고 옷마다 착용 기록을 남긴다. 같은 추천의 다른 코디는 선택 해제."""
+    """'이걸로 입을게요' — 그날(오늘·내일) 입을 코디로 정하고 옷마다 착용 기록을 남긴다. 같은 추천의 다른 코디는 선택 해제."""
     outfit = _get_owned(db, user, outfit_id)
     if outfit.is_selected:
         return load_recommendation(db, outfit.recommendation_id)
 
-    today = clock.today()
+    worn_on = outfit.recommendation.target_date  # 내일 코디를 전날 골라도 입는 날로 기록
     for other in outfit.recommendation.outfits:
         if other.is_selected:  # 마음을 바꾼 경우: 이전 선택의 착용 기록을 되돌림
             other.is_selected = False
             other.selected_at = None
             for oi in other.items:
                 oi.clothing_item.wear_count = max(oi.clothing_item.wear_count - 1, 0)
-                if oi.clothing_item.last_worn_at == today:
+                if oi.clothing_item.last_worn_at == worn_on:
                     oi.clothing_item.last_worn_at = None
 
     outfit.is_selected = True
     outfit.selected_at = clock.now().replace(tzinfo=None)
     for oi in outfit.items:
         oi.clothing_item.wear_count += 1
-        oi.clothing_item.last_worn_at = today
+        oi.clothing_item.last_worn_at = worn_on
     db.commit()
     return load_recommendation(db, outfit.recommendation_id)
 

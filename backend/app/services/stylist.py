@@ -1,12 +1,13 @@
 """AI 스타일리스트 가이드와 피드백 (계획서 기능 3).
 
-- generate_guide : 고른 코디가 왜 오늘 날씨·일정에 맞는지 설명하고, 연출 팁을 만든다.
+- generate_guide : 고른 코디가 왜 그날(오늘·내일) 날씨·일정에 맞는지 설명하고, 연출 팁을 만든다.
 (피드백을 다음 추천에 반영하는 부분은 recommender.feedback_text)
 """
 
 import logging
 from sqlalchemy.orm import Session
 
+from app.core import clock
 from app.models import Outfit, Recommendation
 from app.schemas.recommendation import Guide
 from app.schemas.weather import WeatherOut
@@ -16,12 +17,12 @@ from app.services.recommender import MOOD_KO, schedule_text, weather_text
 log = logging.getLogger(__name__)
 
 GUIDE_PROMPT = """너는 '오늘 뭐 입지?' 앱의 친절한 패션 스타일리스트야. 해요체로 다정하게 말해.
-사용자가 오늘 입을 코디를 이미 골랐어. 이 코디가 왜 오늘에 어울리는지 설명하고, 연출 팁을 알려 줘.
+사용자가 {day} 입을 코디를 이미 골랐어. 이 코디가 왜 {day}에 어울리는지 설명하고, 연출 팁을 알려 줘.
 
-## 오늘 날씨 ({location})
+## {day} 날씨 ({location})
 {weather}
 
-## 오늘 일정
+## {day} 일정
 {schedules}
 
 ## 상황·분위기
@@ -33,7 +34,7 @@ GUIDE_PROMPT = """너는 '오늘 뭐 입지?' 앱의 친절한 패션 스타일�
 {items}
 
 ## 작성 규칙
-- intro: 인사 + 오늘 코디 한 줄 소개, 80자 이내.
+- intro: 인사 + {day} 코디 한 줄 소개, 80자 이내.
 - reasons: 2~4개. tag 는 "기온", "비", "일정", "분위기", "색 조합", "소재" 중 하나.
   날씨 숫자(기온, 체감, 일교차, 강수 시각)와 일정을 구체적으로 근거로 들어. 비 소식이 없으면 "비" 태그는 쓰지 마.
 - tips: 2~3개. 위 옷들로 바로 할 수 있는 구체적인 연출법 (소매 걷기, 넣어 입기, 레이어링, 색 맞추기 등).
@@ -60,6 +61,7 @@ def _items_text(outfit: Outfit) -> str:
 def generate_guide(db: Session, outfit: Outfit) -> Outfit:
     rec = outfit.recommendation
     prompt = GUIDE_PROMPT.format(
+        day=clock.day_label(rec.target_date),
         location=rec.location_name or "현재 위치",
         weather=weather_text(_weather_of(rec)),
         schedules=schedule_text(rec.schedule_snapshot or []),

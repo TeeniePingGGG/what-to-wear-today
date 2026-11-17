@@ -4,6 +4,7 @@ import { assetUrl, errorMessage } from '../api/client'
 import { useDeleteFeedback, useGenerateGuide, useOutfit, useSaveFeedback } from '../api/outfits'
 import { Icon } from '../components/Icon'
 import { FEEDBACK_REASONS, MOOD_LABEL, type FeedbackRating, type FeedbackReason, type OutfitDetail } from '../types/api'
+import { daySuffix, planDate } from '../utils/planDay'
 import s from './pages.module.css'
 
 // 이유 태그별 색
@@ -36,6 +37,7 @@ export default function GuidePage() {
   const rec = data.recommendation
   const items = [...data.items].sort((a, b) => SLOT_ORDER.indexOf(a.slot) - SLOT_ORDER.indexOf(b.slot))
   const date = new Date(rec.target_date)
+  const isTomorrow = rec.target_date === planDate('tomorrow')
   const conditions = [
     rec.location_name,
     rec.weather?.summary,
@@ -47,7 +49,7 @@ export default function GuidePage() {
   return (
     <div className={`${s.page} ${s.narrow}`}>
       <div className={s.backRow}>
-        <Link to="/" aria-label="뒤로" className={s.iconLink}>
+        <Link to={`/${daySuffix(isTomorrow ? 'tomorrow' : 'today')}`} aria-label="뒤로" className={s.iconLink}>
           <Icon name="chevronLeft" size={22} />
         </Link>
         <h1 className={s.title} style={{ fontSize: 20 }}>
@@ -73,7 +75,7 @@ export default function GuidePage() {
 
       {!data.reasons && (guide.isPending || !guide.error) && (
         <p className={s.aiNotice} role="status">
-          <Icon name="sparkle" size={16} /> 스타일리스트가 오늘 코디 설명을 쓰고 있어요…
+          <Icon name="sparkle" size={16} /> 스타일리스트가 {isTomorrow ? '내일' : '오늘'} 코디 설명을 쓰고 있어요…
         </p>
       )}
       {guide.error && (

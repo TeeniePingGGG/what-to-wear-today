@@ -1,6 +1,6 @@
 """AI 코디 추천 엔진 (계획서 기능 2).
 
-내 옷장(보유 옷 목록) + 오늘 날씨 + 일정·상황을 LLM 에 주고, 옷 id 조합만 고르게 한다.
+내 옷장(보유 옷 목록) + 그날(오늘·내일) 날씨 + 일정·상황을 LLM 에 주고, 옷 id 조합만 고르게 한다.
 LLM 이 돌려준 id 는 반드시 서버에서 다시 검증한다 → '내가 가진 옷으로만' 추천을 보장.
 """
 
@@ -28,15 +28,15 @@ SEASON_KO = {"SPRING": "봄", "SUMMER": "여름", "FALL": "가을", "WINTER": "�
 # 한 코디에 한 개만 들어갈 수 있는 종류
 SINGLE_SLOTS = {Category.TOP, Category.BOTTOM, Category.DRESS, Category.OUTER, Category.SHOES, Category.BAG}
 
-PROMPT = """너는 친절한 패션 스타일리스트야. 사용자가 **이미 가진 옷** 중에서만 오늘 입을 코디를 골라 줘.
+PROMPT = """너는 친절한 패션 스타일리스트야. 사용자가 **이미 가진 옷** 중에서만 {day} 입을 코디를 골라 줘.
 
-## 오늘 날씨 ({location})
+## {day} 날씨 ({location})
 {weather}
 
-## 오늘 일정
+## {day} 일정
 {schedules}
 
-## 오늘의 상황·원하는 분위기
+## {day}의 상황·원하는 분위기
 - 상황: {situations}
 - 분위기: {mood}
 - 사용자 메모: {note}
@@ -53,7 +53,7 @@ PROMPT = """너는 친절한 패션 스타일리스트야. 사용자가 **이미
 3. 아우터(OUTER)·신발(SHOES)·가방(BAG)은 각각 최대 1개, 액세서리(ACCESSORY)는 최대 2개.
    - 체감 온도가 낮거나(대략 17°C 이하) 일교차가 크거나 비 소식이 있으면 아우터를 넣어.
    - 신발이 옷장에 있으면 넣어. 비 소식이 있으면 방수(is_waterproof) 옷·신발을 우선해.
-4. 보온성(warmth_level 1~5)과 계절(seasons)이 오늘 기온에 맞아야 해.
+4. 보온성(warmth_level 1~5)과 계절(seasons)이 {day} 기온에 맞아야 해.
 5. 일정·상황·분위기에 어울려야 해 (예: 발표·면접은 단정하게, 운동·많이 걷기는 편하게).
 6. worn_recently 가 true 인 옷은 다른 선택지가 없을 때만 써.
    피드백에서 '추울 것 같아요'가 있었으면 비슷한 기온에서 더 따뜻하게, '더울 것 같아요'면 더 가볍게 골라.
@@ -122,11 +122,15 @@ def weather_text(w: WeatherOut) -> str:
     rain = "없음"
     if w.rain_from is not None:
         rain = f"{w.rain_from}시부터" + (f" {w.rain_until}시까지" if w.rain_until and w.rain_until != w.rain_from else "")
+    # 전날 받은 내일 예보면 '지금' 대신 아침 예보, '남은 시간' 대신 하루 전체
+    forecast = w.forecast_date is not None and w.forecast_date > w.fetched_at.date()
     return "\n".join(
         [
-            f"- 지금: {w.temp}°C (체감 {w.feels_like}°C), {w.sky}",
+            f"- 아침 8시 예보: {w.temp}°C (체감 {w.feels_like}°C), {w.sky}"
+            if forecast
+            else f"- 지금: {w.temp}°C (체감 {w.feels_like}°C), {w.sky}",
             f"- 최저 {w.temp_min}°C / 최고 {w.temp_max}°C (일교차 {w.temp_range}°C)",
-            f"- 남은 시간 최고 강수확률 {w.pop_rest}%, 비 소식: {rain}",
+            f"- {'하루' if forecast else '남은 시간'} 최고 강수확률 {w.pop_rest}%, 비 소식: {rain}",
             f"- 아침(6~11시) {part(range(6, 12))}",
             f"- 오후(12~17시) {part(range(12, 18))}",
             f"- 저녁(18~23시) {part(range(18, 24))}",
@@ -209,17 +213,18 @@ def _validate(pick: OutfitPick, by_id: dict[int, ClothingItem]) -> list[Clothing
 def recommend(db: Session, user: User, req: RecommendRequest, weather: WeatherOut) -> Recommendation:
     closet = _closet(db, user.id)
     _check_enough(closet)
-    today = clock.today()
+    day = req.target_date or clock.today()
     schedules = list(
         db.scalars(
             select(Schedule)
-            .where(Schedule.user_id == user.id, Schedule.date == today)
+            .where(Schedule.user_id == user.id, Schedule.date == day)
             .order_by(Schedule.start_time.is_(None), Schedule.start_time)
         ).all()
     )
     snapshot = _schedule_snapshot(schedules)
 
     prompt = PROMPT.format(
+        day=clock.day_label(day),
         location=weather.location_name or req.location_name or "현재 위치",
         weather=weather_text(weather),
         schedules=schedule_text(snapshot),
@@ -251,7 +256,7 @@ def recommend(db: Session, user: User, req: RecommendRequest, weather: WeatherOu
 
     rec = Recommendation(
         user_id=user.id,
-        target_date=today,
+        target_date=day,
         location_name=weather.location_name or req.location_name,
         latitude=req.latitude,
         longitude=req.longitude,

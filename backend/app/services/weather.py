@@ -1,4 +1,4 @@
-"""오늘 날씨 가져오기 (Open-Meteo — 키 없이 무료, 한국은 기상청 모델 포함).
+"""오늘·내일 날씨 가져오기 (Open-Meteo — 키 없이 무료, 한국은 기상청 모델 포함).
 
 다른 날씨 API(예: 기상청 단기예보)로 바꾸려면 이 파일의 fetch_weather 만 같은 형식(WeatherOut)으로 돌려주게 바꾸면 된다.
 """
@@ -6,6 +6,7 @@
 import asyncio
 import logging
 import time
+from datetime import date
 
 import httpx
 
@@ -59,7 +60,9 @@ class WeatherError(Exception):
     """사용자에게 보여 줄 메시지를 담은 날씨 조회 실패."""
 
 
-_cache: dict[tuple[float, float], tuple[float, WeatherOut]] = {}
+# 위치별 원본 응답(오늘·내일 2일치) 캐시 — 날짜별로 그때그때 정리
+_cache: dict[tuple[float, float], tuple[float, dict]] = {}
+COMMUTE_HOUR = 8  # 내일 날씨는 '지금' 대신 출근·등교 시간 기준으로 보여 줌
 
 
 def describe(code: int | None) -> str:
@@ -70,27 +73,36 @@ DEVICE_LOCATION = "현재 위치"  # 프런트가 위치 권한으로 얻은 좌
 
 
 async def fetch_weather(
-    lat: float, lon: float, location_name: str | None = None, raw: dict | None = None
+    lat: float,
+    lon: float,
+    location_name: str | None = None,
+    raw: dict | None = None,
+    day: date | None = None,
 ) -> WeatherOut:
-    """raw: 브라우저가 Open-Meteo 에서 직접 받아 온 응답.
+    """day(오늘·내일)의 날씨. 비우면 오늘.
 
+    raw: 브라우저가 Open-Meteo 에서 직접 받아 온 응답 (오늘·내일 2일치).
     배포 서버(Vercel)에서는 Open-Meteo 접속이 자주 막혀서(ConnectTimeout),
     브라우저가 받아 온 값이 있으면 그걸 쓰고 없을 때만 서버가 직접 가져온다.
     """
+    day = day or clock.today()
     if location_name in (None, DEVICE_LOCATION):  # 좌표만 있으면 동네 이름을 찾아 붙임
         location_name = await reverse_geocode(lat, lon) or location_name
     key = (round(lat, 2), round(lon, 2))  # 약 1km 단위로 묶어 캐시
     if raw is not None:
         try:
-            weather = _parse(raw, lat, lon, location_name)
+            weather = _parse(raw, lat, lon, location_name, day)
         except (KeyError, IndexError, TypeError, ValueError) as e:
             log.warning("브라우저가 보낸 날씨 형식 오류, 서버에서 다시 조회: %r", e)
         else:
-            _cache[key] = (time.monotonic(), weather)
+            _cache[key] = (time.monotonic(), raw)
             return weather
     hit = _cache.get(key)
     if hit and time.monotonic() - hit[0] < CACHE_TTL_S:
-        return hit[1].model_copy(update={"location_name": location_name or hit[1].location_name})
+        try:
+            return _parse(hit[1], lat, lon, location_name, day)
+        except (KeyError, IndexError, TypeError, ValueError):
+            pass  # 캐시에 그 날짜가 없으면 새로 조회
 
     params = {
         "latitude": lat,
@@ -99,7 +111,7 @@ async def fetch_weather(
         "hourly": "temperature_2m,apparent_temperature,precipitation_probability,weather_code",
         "daily": "temperature_2m_max,temperature_2m_min,precipitation_probability_max",
         "timezone": "Asia/Seoul",
-        "forecast_days": 1,
+        "forecast_days": 2,  # 오늘 + 내일 (프런트 src/api/openMeteo.ts 와 같게)
     }
     data = None
     last_error: Exception | None = None
@@ -123,52 +135,61 @@ async def fetch_weather(
             except (httpx.HTTPError, KeyError, IndexError, TypeError, ValueError) as e:
                 last_error = e
                 log.warning("예비 날씨(MET Norway) 조회도 실패: %r", e)
+    if data is None and hit:  # 오래된 캐시라도 있으면 그걸 보여 줌
+        log.warning("날씨 API 응답 없음 - 이전에 받아 둔 날씨로 대신 표시")
+        data = hit[1]
     if data is None:
-        if hit:  # 오래된 캐시라도 있으면 그걸 보여 줌
-            log.warning("날씨 API 응답 없음 - 이전에 받아 둔 날씨로 대신 표시")
-            return hit[1].model_copy(update={"location_name": location_name or hit[1].location_name})
         raise WeatherError("날씨 정보를 가져오지 못했어요. 잠시 후 다시 시도해 주세요.") from last_error
 
     try:
-        weather = _parse(data, lat, lon, location_name)
+        weather = _parse(data, lat, lon, location_name, day)
     except (KeyError, IndexError, TypeError, ValueError) as e:
-        log.warning("날씨 응답 형식 오류: %s", e)
+        log.warning("날씨 응답 형식 오류: %r", e)
         raise WeatherError("날씨 정보를 이해하지 못했어요.") from e
 
-    _cache[key] = (time.monotonic(), weather)
+    _cache[key] = (time.monotonic(), data)
     return weather
 
 
-def _parse(data: dict, lat: float, lon: float, location_name: str | None) -> WeatherOut:
+def _parse(data: dict, lat: float, lon: float, location_name: str | None, day: date) -> WeatherOut:
+    """Open-Meteo 형식 응답에서 day 하루치만 정리한다 (응답에 그 날이 없으면 ValueError)."""
     cur, hourly, daily = data["current"], data["hourly"], data["daily"]
-    now_hour = clock.now().hour
+    is_today = day == clock.today()
+    now_hour = clock.now().hour if is_today else 0  # 내일은 하루 전체가 '남은 시간'
+    prefix = day.isoformat()  # "2026-11-18"
 
-    hours: list[HourlyWeather] = []
-    for i, t in enumerate(hourly["time"]):  # "2026-11-09T15:00"
-        hours.append(
-            HourlyWeather(
-                hour=int(t[11:13]),
-                temp=round(hourly["temperature_2m"][i]),
-                feels_like=round(hourly["apparent_temperature"][i]),
-                pop=hourly["precipitation_probability"][i] or 0,
-                sky=describe(hourly["weather_code"][i]),
-            )
+    idx = [i for i, t in enumerate(hourly["time"]) if t.startswith(prefix)]
+    if not idx:
+        raise ValueError(f"{prefix} 예보가 응답에 없음")
+    codes = [hourly["weather_code"][i] for i in idx]
+    hours = [
+        HourlyWeather(
+            hour=int(hourly["time"][i][11:13]),  # "2026-11-09T15:00"
+            temp=round(hourly["temperature_2m"][i]),
+            feels_like=round(hourly["apparent_temperature"][i]),
+            pop=hourly["precipitation_probability"][i] or 0,
+            sky=describe(hourly["weather_code"][i]),
         )
-
-    # 지금 이후로 비(또는 눈)가 올 것 같은 시간대
-    wet = [
-        h.hour
-        for h, code in zip(hours, hourly["weather_code"])
-        if h.hour >= now_hour and (h.pop >= RAIN_POP or code in WET_CODES)
+        for i in idx
     ]
+
+    # 지금(내일이면 0시) 이후로 비(또는 눈)가 올 것 같은 시간대
+    wet = [h.hour for h, code in zip(hours, codes) if h.hour >= now_hour and (h.pop >= RAIN_POP or code in WET_CODES)]
     rest = [h.pop for h in hours if h.hour >= now_hour]
     pop_rest = max(rest) if rest else 0
     rain_from = wet[0] if wet else None
     rain_until = wet[-1] if wet else None
 
-    temp_max = round(daily["temperature_2m_max"][0])
-    temp_min = round(daily["temperature_2m_min"][0])
-    sky = describe(cur["weather_code"])
+    d = daily["time"].index(prefix) if "time" in daily else (0 if is_today else 1)
+    temp_max = round(daily["temperature_2m_max"][d])
+    temp_min = round(daily["temperature_2m_min"][d])
+    if is_today:
+        now_temp, now_feels, now_code = cur["temperature_2m"], cur["apparent_temperature"], cur["weather_code"]
+    else:  # 내일은 출근·등교 시간(없으면 가장 가까운 시간) 기준
+        h = min(hours, key=lambda x: abs(x.hour - COMMUTE_HOUR))
+        k = idx[hours.index(h)]
+        now_temp, now_feels, now_code = h.temp, h.feels_like, hourly["weather_code"][k]
+    sky = describe(now_code)
     if rain_from is not None and rain_from > now_hour:
         summary = f"{sky}, {rain_from}시부터 비 소식"
     elif rain_from is not None:
@@ -180,14 +201,15 @@ def _parse(data: dict, lat: float, lon: float, location_name: str | None) -> Wea
         location_name=location_name,
         latitude=lat,
         longitude=lon,
-        temp=round(cur["temperature_2m"]),
-        feels_like=round(cur["apparent_temperature"]),
+        forecast_date=day,
+        temp=round(now_temp),
+        feels_like=round(now_feels),
         sky=sky,
         summary=summary,
         temp_max=temp_max,
         temp_min=temp_min,
         temp_range=temp_max - temp_min,
-        pop_max=daily["precipitation_probability_max"][0] or 0,
+        pop_max=daily["precipitation_probability_max"][d] or 0,
         pop_rest=pop_rest,
         rain_from=rain_from,
         rain_until=rain_until,

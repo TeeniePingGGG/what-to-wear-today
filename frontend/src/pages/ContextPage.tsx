@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { errorMessage } from '../api/client'
-import { useCreateRecommendation, useTodayRecommendation } from '../api/recommendations'
+import { useCreateRecommendation, useRecommendation } from '../api/recommendations'
 import { useAddSchedule, useDeleteSchedule, useSchedules } from '../api/schedules'
 import { Icon } from '../components/Icon'
 import { useCoords } from '../hooks/useCoords'
 import { MOOD_LABEL, type Mood } from '../types/api'
+import { daySuffix, PLAN_DAY_LABEL, planDate, planDateLabel, usePlanDay } from '../utils/planDay'
 import s from './pages.module.css'
 
 const SITUATIONS = ['등교', '출근', '발표', '면접', '저녁 약속', '데이트', '운동', '여행', '많이 걷기']
@@ -14,13 +15,16 @@ const MOODS = Object.keys(MOOD_LABEL) as Mood[]
 export default function ContextPage() {
   const navigate = useNavigate()
   const { data: coords } = useCoords()
-  const schedules = useSchedules()
+  const [day] = usePlanDay()
+  const date = planDate(day)
+  const dayName = PLAN_DAY_LABEL[day]
+  const schedules = useSchedules(date)
   const addSchedule = useAddSchedule()
   const deleteSchedule = useDeleteSchedule()
-  const lastRec = useTodayRecommendation().data
+  const lastRec = useRecommendation(date).data
   const recommend = useCreateRecommendation()
 
-  // 오늘 이미 추천받았다면 그때 고른 조건으로 시작
+  // 그날 이미 추천받았다면 그때 고른 조건으로 시작
   const [picked, setPicked] = useState<string[]>(() => lastRec?.situations ?? [])
   const [mood, setMood] = useState<Mood>(() => lastRec?.mood ?? 'NEAT')
   const [note, setNote] = useState(() => lastRec?.user_note ?? '')
@@ -35,7 +39,7 @@ export default function ContextPage() {
     e.preventDefault()
     if (!title.trim()) return
     addSchedule.mutate(
-      { title: title.trim(), start_time: time || null, is_important: important },
+      { title: title.trim(), date, start_time: time || null, is_important: important },
       {
         onSuccess: () => {
           setTitle('')
@@ -56,25 +60,30 @@ export default function ContextPage() {
         situations: picked,
         mood,
         user_note: note.trim() || null,
+        target_date: date,
       },
-      { onSuccess: () => navigate('/') },
+      { onSuccess: () => navigate(`/${daySuffix(day)}`) },
     )
   }
 
   return (
     <div className={`${s.page} ${s.narrow}`}>
       <div className={s.backRow}>
-        <Link to="/" aria-label="뒤로" className={s.iconLink}>
+        <Link to={`/${daySuffix(day)}`} aria-label="뒤로" className={s.iconLink}>
           <Icon name="chevronLeft" size={22} />
         </Link>
         <h1 className={s.title} style={{ fontSize: 20 }}>
-          오늘 어떤 하루인가요?
+          {dayName} 어떤 하루인가요?
         </h1>
       </div>
+      <p className={s.subtitle} style={{ marginTop: -8 }}>
+        {planDateLabel(day)}
+        {day === 'tomorrow' && ' · 내일 일정을 넣고 미리 코디를 받아 두세요'}
+      </p>
 
       <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }} aria-labelledby="sched-title">
         <h2 id="sched-title" className={s.sectionTitle}>
-          오늘 일정
+          {dayName} 일정
         </h2>
         <div className="card" style={{ padding: 0 }}>
           {schedules.data?.length === 0 && (
@@ -129,7 +138,7 @@ export default function ContextPage() {
 
       <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <h2 className={s.sectionTitle}>
-          오늘의 상황 <span className={s.subtitle}>여러 개 선택 가능</span>
+          {dayName}의 상황 <span className={s.subtitle}>여러 개 선택 가능</span>
         </h2>
         <div className={s.chipRow}>
           {SITUATIONS.map((label) => (
@@ -163,7 +172,7 @@ export default function ContextPage() {
       )}
       <button type="button" className="btn btn-primary" onClick={submit} style={{ height: 52 }} disabled={!coords || recommend.isPending}>
         <Icon name="sparkle" size={18} />
-        {recommend.isPending ? 'AI가 코디를 고르고 있어요…' : '이 조건으로 코디 추천받기'}
+        {recommend.isPending ? 'AI가 코디를 고르고 있어요…' : `이 조건으로 ${dayName} 코디 추천받기`}
       </button>
     </div>
   )

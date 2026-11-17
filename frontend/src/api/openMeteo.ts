@@ -15,7 +15,7 @@ const PARAMS = {
   hourly: 'temperature_2m,apparent_temperature,precipitation_probability,weather_code',
   daily: 'temperature_2m_max,temperature_2m_min,precipitation_probability_max',
   timezone: 'Asia/Seoul',
-  forecast_days: '1',
+  forecast_days: '2', // 오늘 + 내일 (전날 밤에 내일 코디 보기)
 }
 
 const cache = new Map<string, { at: number; data: unknown }>()
