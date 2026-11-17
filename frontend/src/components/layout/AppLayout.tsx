@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { Icon, type IconName } from '../Icon'
+import { Logo } from '../Logo'
 import styles from './AppLayout.module.css'
 
 const NAV: { to: string; label: string; icon: IconName }[] = [
@@ -18,7 +19,10 @@ export default function AppLayout() {
   return (
     <div className={styles.shell}>
       <nav className={styles.nav} aria-label="주 메뉴">
-        <div className={styles.brand}>오늘 뭐 입지?</div>
+        <div className={styles.brand}>
+          <Logo size={30} />
+          <span>오늘 뭐 입지?</span>
+        </div>
         {NAV.map((item) => (
           <NavLink
             key={item.to}

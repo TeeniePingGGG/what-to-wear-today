@@ -619,3 +619,8 @@ fieldset:disabled .chip {
   border-radius: 6px;
   padding: 2px 6px;
 }
+
+.authLogo {
+  display: block;
+  margin-bottom: -4px;
+}

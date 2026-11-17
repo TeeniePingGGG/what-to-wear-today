@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { login } from '../api/auth'
 import { errorMessage } from '../api/client'
+import { Logo } from '../components/Logo'
 import { setToken } from '../auth/token'
 import s from './pages.module.css'
 
@@ -31,6 +32,7 @@ export default function LoginPage() {
   return (
     <div className={s.authWrap}>
       <form className={`card ${s.authCard}`} onSubmit={submit}>
+        <Logo size={56} className={s.authLogo} />
         <h1 className={s.title}>오늘 뭐 입지?</h1>
         <p className={s.subtitle}>내 옷장과 오늘 날씨로 코디를 추천받아요.</p>
         <label className="field">
