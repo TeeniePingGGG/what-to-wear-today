@@ -6,6 +6,7 @@ import { Icon } from '../components/Icon'
 import ItemCard, { type BgStatus } from '../components/ItemCard'
 import { formFromAnalysis, toCreateBody, type ItemForm } from '../components/itemForm'
 import type { MultiAnalyzeResponse } from '../types/api'
+import { preloadBackgroundRemoval } from '../utils/removeBackground'
 import s from './pages.module.css'
 
 const STEPS = ['촬영', '옷 찾기·배경 제거', 'AI 분석', '내 검수']
@@ -67,6 +68,7 @@ export default function AddItemPage() {
     e.target.value = '' // 같은 사진을 다시 골라도 동작하도록
     if (!file) return
     runId.current++
+    preloadBackgroundRemoval() // 서버가 옷을 찾는 동안 배경 제거 모델을 같이 받아 둠
     setPreview(URL.createObjectURL(file))
     setResult(null)
     setForms([])
