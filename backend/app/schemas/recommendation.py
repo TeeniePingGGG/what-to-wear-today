@@ -12,6 +12,7 @@ class RecommendRequest(BaseModel):
     situations: list[str] = Field(default=[], max_length=10, description='오늘의 상황 (예: ["발표", "저녁 약속"])')
     mood: Mood | None = None
     user_note: str | None = Field(default=None, max_length=500, description="AI에게 더 알려줄 것")
+    raw_weather: dict | None = Field(default=None, description="브라우저가 Open-Meteo 에서 받아 온 원본 응답 (없으면 서버가 조회)")
 
 
 # --- LLM 이 돌려주는 형식 (Gemini response_schema) ---

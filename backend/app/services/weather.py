@@ -68,10 +68,25 @@ def describe(code: int | None) -> str:
 DEVICE_LOCATION = "현재 위치"  # 프런트가 위치 권한으로 얻은 좌표일 때 보내는 이름
 
 
-async def fetch_weather(lat: float, lon: float, location_name: str | None = None) -> WeatherOut:
+async def fetch_weather(
+    lat: float, lon: float, location_name: str | None = None, raw: dict | None = None
+) -> WeatherOut:
+    """raw: 브라우저가 Open-Meteo 에서 직접 받아 온 응답.
+
+    배포 서버(Vercel)에서는 Open-Meteo 접속이 자주 막혀서(ConnectTimeout),
+    브라우저가 받아 온 값이 있으면 그걸 쓰고 없을 때만 서버가 직접 가져온다.
+    """
     if location_name in (None, DEVICE_LOCATION):  # 좌표만 있으면 동네 이름을 찾아 붙임
         location_name = await reverse_geocode(lat, lon) or location_name
     key = (round(lat, 2), round(lon, 2))  # 약 1km 단위로 묶어 캐시
+    if raw is not None:
+        try:
+            weather = _parse(raw, lat, lon, location_name)
+        except (KeyError, IndexError, TypeError, ValueError) as e:
+            log.warning("브라우저가 보낸 날씨 형식 오류, 서버에서 다시 조회: %r", e)
+        else:
+            _cache[key] = (time.monotonic(), weather)
+            return weather
     hit = _cache.get(key)
     if hit and time.monotonic() - hit[0] < CACHE_TTL_S:
         return hit[1].model_copy(update={"location_name": location_name or hit[1].location_name})
@@ -108,7 +123,7 @@ async def fetch_weather(lat: float, lon: float, location_name: str | None = None
 
     try:
         weather = _parse(data, lat, lon, location_name)
-    except (KeyError, IndexError, TypeError) as e:
+    except (KeyError, IndexError, TypeError, ValueError) as e:
         log.warning("날씨 응답 형식 오류: %s", e)
         raise WeatherError("날씨 정보를 이해하지 못했어요.") from e
 

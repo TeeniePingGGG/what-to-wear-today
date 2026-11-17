@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Recommendation, RecommendRequest } from '../types/api'
 import { api } from './client'
+import { fetchOpenMeteo } from './openMeteo'
 
 const TODAY_KEY = ['recommendation', 'today']
 
@@ -16,7 +17,10 @@ export function useTodayRecommendation() {
 export function useCreateRecommendation() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async (body: RecommendRequest) => (await api.post<Recommendation>('/recommendations', body)).data,
+    mutationFn: async (body: RecommendRequest) => {
+      const raw_weather = await fetchOpenMeteo(body.latitude, body.longitude)
+      return (await api.post<Recommendation>('/recommendations', { ...body, raw_weather })).data
+    },
     onSuccess: (rec) => qc.setQueryData(TODAY_KEY, rec),
   })
 }

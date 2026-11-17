@@ -27,7 +27,7 @@ def load_recommendation(db: DbSession, rec_id: int) -> Recommendation:
 async def create_recommendation(body: RecommendRequest, db: DbSession, user: CurrentUser):
     """오늘 날씨 + 일정 + 상황으로 내 옷장에서 코디 최대 3개를 추천받는다."""
     try:
-        weather = await fetch_weather(body.latitude, body.longitude, body.location_name)
+        weather = await fetch_weather(body.latitude, body.longitude, body.location_name, body.raw_weather)
     except WeatherError as e:
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(e)) from e
     try:
