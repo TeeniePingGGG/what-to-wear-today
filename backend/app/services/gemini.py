@@ -19,8 +19,8 @@ from app.core.config import settings
 log = logging.getLogger(__name__)
 
 RETRY_DELAYS = (2,)  # 서버 혼잡(5xx) 시 같은 모델로 재시도하기 전 대기 시간(초)
-REQUEST_TIMEOUT_S = 25  # 요청 1번의 최대 대기 시간
-TOTAL_BUDGET_S = 60  # 재시도·예비 모델 포함 전체 최대 시간
+REQUEST_TIMEOUT_S = 40  # 요청 1번의 최대 대기 시간 (여러 벌 사진은 응답이 길어서 넉넉히)
+TOTAL_BUDGET_S = 85  # 재시도·예비 모델 포함 전체 최대 시간 (Vercel maxDuration 120초 안쪽)
 
 
 # 응답 시간 초과 예외 (SDK 버전에 따라 httpx / httpx2 중 하나를 씀)
@@ -85,7 +85,8 @@ def generate(contents: list, schema: type[T], temperature: float = 0.2) -> tuple
 
     for model in _models():
         for attempt in range(len(RETRY_DELAYS) + 1):
-            if time.monotonic() - started > TOTAL_BUDGET_S:
+            # 남은 시간이 요청 1번 최대 시간보다 짧으면 시작하지 않음 (서버 강제 종료 방지)
+            if time.monotonic() - started + REQUEST_TIMEOUT_S > TOTAL_BUDGET_S:
                 log.warning("Gemini 시간 초과 (%ds) — 중단", TOTAL_BUDGET_S)
                 raise last_error or busy
             try:

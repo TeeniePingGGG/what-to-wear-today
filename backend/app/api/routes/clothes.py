@@ -10,6 +10,7 @@
 POST /clothes/cutout 으로 올려 새 주소를 받는다.
 """
 
+import asyncio
 import io
 import logging
 import time
@@ -81,12 +82,16 @@ async def _run_analysis(jpeg: bytes):
 CATEGORY_ORDER = {c: i for i, c in enumerate(["OUTER", "TOP", "DRESS", "BOTTOM", "SHOES", "BAG", "ACCESSORY"])}
 
 
-async def _cutout_item(user_id: int, img: Image.Image) -> tuple[str, bool]:
-    """배경을 지워 저장. (이미지 주소, 배경 제거 성공 여부)"""
-    cutout = await run_in_threadpool(images.remove_background, img)
+def _cutout_item_sync(user_id: int, img: Image.Image) -> tuple[str, bool]:
+    cutout = images.remove_background(img)
     if cutout is not None:
         return storage.save_upload(user_id, images.to_png(cutout), ".png"), True
     return storage.save_upload(user_id, images.to_jpeg(img), ".jpg"), False
+
+
+async def _cutout_item(user_id: int, img: Image.Image) -> tuple[str, bool]:
+    """배경을 지워 저장. (이미지 주소, 배경 제거 성공 여부) — 저장(Blob 업로드)까지 스레드에서"""
+    return await run_in_threadpool(_cutout_item_sync, user_id, img)
 
 
 async def _detect_and_cut(user_id: int, img: Image.Image, original_url: str) -> MultiAnalyzeResponse:
@@ -105,15 +110,16 @@ async def _detect_and_cut(user_id: int, img: Image.Image, original_url: str) -> 
     except VisionError as e:
         ai_error = str(e)
 
+    crops = [(d, images.crop_box(img, d.box_2d)) for d in detected]
+    crops = [(d, c) for d, c in crops if c is not None]
+    # 여러 벌을 동시에 자르고 저장 (한 벌씩 차례로 하면 벌 수만큼 느려짐)
+    saved = await asyncio.gather(*(_cutout_item(user_id, c) for _, c in crops))
     items: list[AnalyzedItem] = []
-    for d in detected:
-        crop = images.crop_box(img, d.box_2d)
-        if crop is None:
-            continue
-        image_url, removed = await _cutout_item(user_id, crop)
+    for (d, _), (image_url, removed) in zip(crops, saved):
         analysis = ClothingAnalysis.model_validate(d.model_dump(exclude={"box_2d"}))
         ai_raw = {"model": model, "result": analysis.model_dump(mode="json"), "box_2d": d.box_2d}
         items.append(AnalyzedItem(image_url=image_url, background_removed=removed, analysis=analysis, ai_raw=ai_raw))
+    log.info("자르기·저장 완료 %.1fs — %d벌", time.monotonic() - started, len(items))
 
     if not items:  # AI 실패 또는 옷을 못 찾음 → 사진 전체를 한 벌로
         if ai_error is None:

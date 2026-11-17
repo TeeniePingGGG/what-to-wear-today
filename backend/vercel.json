@@ -3,7 +3,7 @@
   "regions": ["icn1"],
   "functions": {
     "index.py": {
-      "maxDuration": 60,
+      "maxDuration": 120,
       "excludeFiles": "{uploads/**,alembic/**,.venv/**}"
     }
   }
