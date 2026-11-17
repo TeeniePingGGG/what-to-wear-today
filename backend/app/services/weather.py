@@ -12,12 +12,13 @@ import httpx
 from app.core import clock
 from app.schemas.weather import HourlyWeather, WeatherOut
 from app.services.geocode import reverse_geocode
+from app.services.met_norway import fetch_met
 
 log = logging.getLogger(__name__)
 
 API_URL = "https://api.open-meteo.com/v1/forecast"
 CACHE_TTL_S = 20 * 60  # 같은 위치는 20분 동안 다시 묻지 않음
-RETRIES = 3  # 날씨 서버가 가끔 응답하지 않아서 몇 번 다시 시도
+RETRIES = 2  # Open-Meteo 재시도 횟수 (그래도 안 되면 MET Norway)
 RAIN_POP = 50  # 강수확률이 이 이상이면 '비 예보'로 본다
 
 # WMO 날씨 코드 → 한국어 (https://open-meteo.com/en/docs 의 Weather variable documentation)
@@ -102,7 +103,7 @@ async def fetch_weather(
     }
     data = None
     last_error: Exception | None = None
-    async with httpx.AsyncClient(timeout=httpx.Timeout(8, connect=5)) as client:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(8, connect=4)) as client:
         for attempt in range(1, RETRIES + 1):
             try:
                 res = await client.get(API_URL, params=params)
@@ -114,7 +115,14 @@ async def fetch_weather(
                 # 타임아웃 오류는 메시지가 비어 있어서 종류(repr)까지 남김
                 log.warning("날씨 조회 실패 (%d/%d번째): %r", attempt, RETRIES, e)
                 if attempt < RETRIES:
-                    await asyncio.sleep(0.5 * attempt)
+                    await asyncio.sleep(0.5)
+        if data is None:  # Open-Meteo 가 안 되면 노르웨이 기상청으로
+            try:
+                data = await fetch_met(client, lat, lon)
+                log.info("Open-Meteo 대신 MET Norway 날씨 사용")
+            except (httpx.HTTPError, KeyError, IndexError, TypeError, ValueError) as e:
+                last_error = e
+                log.warning("예비 날씨(MET Norway) 조회도 실패: %r", e)
     if data is None:
         if hit:  # 오래된 캐시라도 있으면 그걸 보여 줌
             log.warning("날씨 API 응답 없음 - 이전에 받아 둔 날씨로 대신 표시")

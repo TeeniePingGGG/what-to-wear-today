@@ -7,7 +7,7 @@
  */
 const API_URL = 'https://api.open-meteo.com/v1/forecast'
 const TTL_MS = 10 * 60 * 1000
-const TIMEOUT_MS = 8000
+const TIMEOUT_MS = 4000 // 막혀 있을 때 오래 기다리지 않게 짧게
 
 // 백엔드 app/services/weather.py 의 params 와 같아야 한다
 const PARAMS = {
