@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { assetUrl, errorMessage } from '../api/client'
-import { useAnalyzeClothing, useCreateClothesBulk, useRedetectClothing } from '../api/clothes'
+import { cutoutInBrowser, useAnalyzeClothing, useCreateClothesBulk, useRedetectClothing } from '../api/clothes'
 import { Icon } from '../components/Icon'
-import ItemCard from '../components/ItemCard'
+import ItemCard, { type BgStatus } from '../components/ItemCard'
 import { formFromAnalysis, toCreateBody, type ItemForm } from '../components/itemForm'
 import type { MultiAnalyzeResponse } from '../types/api'
 import s from './pages.module.css'
@@ -20,6 +20,8 @@ export default function AddItemPage() {
   const [preview, setPreview] = useState<string | null>(null)
   const [result, setResult] = useState<MultiAnalyzeResponse | null>(null)
   const [forms, setForms] = useState<ItemForm[]>([])
+  const [bgStatus, setBgStatus] = useState<Record<number, BgStatus>>({})
+  const runId = useRef(0) // 새 사진을 고르면 이전 배경 제거 작업 결과는 버림
 
   // 미리보기 URL 정리
   useEffect(
@@ -29,18 +31,46 @@ export default function AddItemPage() {
     [preview],
   )
 
+  /** 서버가 배경을 못 지운 옷(배포 버전)은 브라우저에서 한 벌씩 차례로 지운다 */
+  const cutoutRemaining = async (res: MultiAnalyzeResponse, id: number) => {
+    for (const [i, item] of res.items.entries()) {
+      if (item.background_removed) continue
+      if (runId.current !== id) return
+      setBgStatus((prev) => ({ ...prev, [i]: 'working' }))
+      try {
+        const url = await cutoutInBrowser(item.image_url)
+        if (runId.current !== id) return
+        setResult((prev) =>
+          prev && {
+            ...prev,
+            items: prev.items.map((it, j) => (j === i ? { ...it, image_url: url, background_removed: true } : it)),
+          },
+        )
+        setBgStatus((prev) => ({ ...prev, [i]: 'done' }))
+      } catch (err) {
+        console.warn('브라우저 배경 제거 실패, 원본 사진을 그대로 사용', err)
+        if (runId.current === id) setBgStatus((prev) => ({ ...prev, [i]: 'failed' }))
+      }
+    }
+  }
+
   const applyResult = (res: MultiAnalyzeResponse) => {
+    const id = ++runId.current
     setResult(res)
     setForms(res.items.map((it) => formFromAnalysis(it.analysis)))
+    setBgStatus({})
+    void cutoutRemaining(res, id)
   }
 
   const pickFile = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     e.target.value = '' // 같은 사진을 다시 골라도 동작하도록
     if (!file) return
+    runId.current++
     setPreview(URL.createObjectURL(file))
     setResult(null)
     setForms([])
+    setBgStatus({})
     analyze.mutate(file, { onSuccess: applyResult })
   }
 
@@ -53,6 +83,7 @@ export default function AddItemPage() {
   const missingName = selected.some((x) => !x.f.name.trim())
   const found = result && !result.ai_error ? result.items.length : 0
   const stepDone = result && !busy ? 4 : busy ? 1 : 0
+  const cutting = Object.values(bgStatus).some((v) => v === 'working')
 
   const submit = (e: FormEvent) => {
     e.preventDefault()
@@ -163,8 +194,9 @@ export default function AddItemPage() {
             !busy &&
             result.items.map((item, i) => (
               <ItemCard
-                key={item.image_url}
+                key={`${result.original_image_url}-${i}`}
                 item={item}
+                bgStatus={bgStatus[i]}
                 index={i}
                 form={forms[i]}
                 defaultOpen={result.items.length === 1}
@@ -180,9 +212,9 @@ export default function AddItemPage() {
         type="submit"
         className="btn btn-primary"
         style={{ height: 52 }}
-        disabled={!result || busy || selected.length === 0 || missingName || save.isPending}
+        disabled={!result || busy || cutting || selected.length === 0 || missingName || save.isPending}
       >
-        {save.isPending ? '저장 중…' : selected.length > 1 ? `${selected.length}벌 옷장에 저장` : '옷장에 저장'}
+        {cutting ? '배경 지우는 중…' : save.isPending ? '저장 중…' : selected.length > 1 ? `${selected.length}벌 옷장에 저장` : '옷장에 저장'}
       </button>
     </form>
   )

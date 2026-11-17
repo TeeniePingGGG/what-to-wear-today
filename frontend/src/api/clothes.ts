@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Category, Clothing, ClothingCreate, ClothingStatus, MultiAnalyzeResponse, ReanalyzeResponse } from '../types/api'
+import { removeBackgroundInBrowser } from '../utils/removeBackground'
 import { shrinkImage } from '../utils/shrinkImage'
 import { api } from './client'
 
@@ -19,6 +20,19 @@ export function useAnalyzeClothing() {
       return (await api.post<MultiAnalyzeResponse>('/clothes/analyze', form)).data
     },
   })
+}
+
+/**
+ * 서버가 배경을 못 지운 옷 사진(배포 버전)을 브라우저에서 지우고 다시 올린다.
+ * 돌려주는 값: 배경을 지운 새 이미지 주소
+ */
+export async function cutoutInBrowser(imageUrl: string): Promise<string> {
+  // 같은 주소(/api)로 받아서 다른 도메인(Blob) CORS 문제를 피함
+  const original = (await api.get<Blob>('/clothes/image', { params: { url: imageUrl }, responseType: 'blob' })).data
+  const cutout = await removeBackgroundInBrowser(original)
+  const form = new FormData()
+  form.append('image', cutout, 'cutout.png')
+  return (await api.post<{ image_url: string }>('/clothes/cutout', form)).data.image_url
 }
 
 /** 이미 올린 원본 사진으로 옷 찾기를 다시 (AI 실패 시) */

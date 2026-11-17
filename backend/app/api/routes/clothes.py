@@ -4,13 +4,18 @@
 1. POST /clothes/analyze : 사진 업로드 → Vision AI 가 옷을 전부 찾아 정보 추출 → 한 벌씩 잘라 배경 제거 (아직 저장 X)
 2. 사용자가 화면에서 옷마다 AI 결과를 확인·수정 (1차 검수)
 3. POST /clothes/bulk     : 고른 옷들을 한 번에 저장 (한 벌만이면 POST /clothes 도 가능)
+
+배포 서버처럼 서버에서 배경을 못 지울 때(background_removed=false)는
+브라우저가 GET /clothes/image 로 잘린 사진을 받아 직접 배경을 지운 뒤
+POST /clothes/cutout 으로 올려 새 주소를 받는다.
 """
 
+import io
 import logging
 import time
 from typing import Annotated
 
-from fastapi import APIRouter, File, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, File, HTTPException, Query, Response, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
 from PIL import Image, UnidentifiedImageError
 from sqlalchemy import select
@@ -147,6 +152,37 @@ async def analyze(
 
     original_url = storage.save_upload(user.id, images.to_jpeg(img), ".jpg")
     return await _detect_and_cut(user.id, img, original_url)
+
+
+CUTOUT_MAX_BYTES = 4 * 1024 * 1024  # Vercel 요청 크기 제한(4.5MB) 안쪽
+
+
+@router.get("/image", response_class=Response)
+def get_upload_image(user: CurrentUser, url: Annotated[str, Query(max_length=500)]):
+    """내가 올린 사진 내용을 그대로 돌려준다 (브라우저 배경 제거용, 같은 주소라 CORS 걱정 없음)."""
+    _check_owned(user.id, url)
+    media_type = "image/png" if url.lower().endswith(".png") else "image/jpeg"
+    return Response(storage.read_upload(url), media_type=media_type, headers={"Cache-Control": "private, max-age=600"})
+
+
+@router.post("/cutout")
+async def upload_cutout(
+    user: CurrentUser,
+    image: Annotated[UploadFile, File(description="브라우저에서 배경을 지운 PNG (4MB 이하)")],
+) -> dict[str, str]:
+    """브라우저가 배경을 지운 옷 사진을 저장하고 새 주소를 돌려준다."""
+    data = await image.read()
+    if len(data) > CUTOUT_MAX_BYTES:
+        raise HTTPException(status.HTTP_413_CONTENT_TOO_LARGE, "배경을 지운 사진이 너무 커요.")
+    try:
+        img = Image.open(io.BytesIO(data))
+        img.load()
+    except (UnidentifiedImageError, OSError) as e:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "이미지를 열 수 없어요.") from e
+    if img.format != "PNG" or "A" not in img.getbands():
+        raise HTTPException(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, "투명 배경 PNG 만 올릴 수 있어요.")
+    img.thumbnail((images.MAX_SIDE, images.MAX_SIDE))
+    return {"image_url": storage.save_upload(user.id, images.to_png(img), ".png")}
 
 
 @router.post("/redetect", response_model=MultiAnalyzeResponse)

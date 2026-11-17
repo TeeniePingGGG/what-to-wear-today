@@ -5,15 +5,19 @@ import { Icon } from './Icon'
 import c from './ItemCard.module.css'
 import type { ItemForm } from './itemForm'
 
+/** 브라우저 배경 제거 진행 상태 (서버가 배경을 못 지운 경우만) */
+export type BgStatus = 'working' | 'done' | 'failed'
+
 interface Props {
   item: AnalyzedItem
+  bgStatus?: BgStatus
   form: ItemForm
   onChange: (next: ItemForm) => void
   index: number
   defaultOpen?: boolean
 }
 
-export default function ItemCard({ item, form, onChange, index, defaultOpen = false }: Props) {
+export default function ItemCard({ item, bgStatus, form, onChange, index, defaultOpen = false }: Props) {
   const [open, setOpen] = useState(defaultOpen)
   const detailsId = useId()
   const low = new Set(item.analysis?.low_confidence_fields ?? [])
@@ -27,7 +31,12 @@ export default function ItemCard({ item, form, onChange, index, defaultOpen = fa
     <article className={`${c.card} ${form.include ? '' : c.excluded}`} aria-label={label}>
       <div className={c.top}>
         <div className={`${c.thumb} ${item.background_removed ? c.checker : ''}`}>
-          <img src={assetUrl(item.image_url)} alt={label} />
+          <img src={assetUrl(item.image_url)} alt={label} style={bgStatus === 'working' ? { opacity: 0.5 } : undefined} />
+          {bgStatus === 'working' && (
+            <span className={c.thumbStatus} role="status">
+              배경 지우는 중…
+            </span>
+          )}
         </div>
 
         <div className={c.main}>
@@ -43,6 +52,7 @@ export default function ItemCard({ item, form, onChange, index, defaultOpen = fa
               className={c.nameInput}
             />
           </label>
+          {bgStatus === 'failed' && <p className={c.bgFailed}>배경을 지우지 못해 원본 사진으로 저장돼요.</p>}
           <div className={c.row}>
             <label className={c.inlineField}>
               <span className="visually-hidden">종류</span>
